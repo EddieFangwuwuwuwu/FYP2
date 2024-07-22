@@ -1,34 +1,60 @@
 import React, { useState } from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet, Modal, TextInput, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
 
 function BankingCardsScreen() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [cards, setCards] = useState([
+    { id: '1', bank: 'Hong Leong', number: '******118' },
+    { id: '2', bank: 'Public Bank', number: '******557' },
+  ]);
+  const [search, setSearch] = useState('');
+  const [filteredCards, setFilteredCards] = useState([]);
+
+  const addCard = (newCard) => {
+    setCards([...cards, newCard]);
+  };
+
+  const searchCards = (text) => {
+    setSearch(text);
+    if (text) {
+      const newData = cards.filter(item => {
+        const itemData = item.bank ? item.bank.toUpperCase() : ''.toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setFilteredCards(newData);
+    } else {
+      setFilteredCards([]);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My cards</Text>
-      <TouchableOpacity style={styles.items}>
-        <View style={styles.itemContent}>
-          <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-          <View style={styles.textcontainer}>
-            <Text style={styles.name}>Hong Leong</Text>
-            <Text style={styles.subname}>******118</Text>
-          </View>
-          <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.items}>
-        <View style={styles.itemContent}>
-          <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-          <View style={styles.textcontainer}>
-            <Text style={styles.name}>Public Bank</Text>
-            <Text style={styles.subname}>******557</Text>
-          </View>
-          <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-        </View>
-      </TouchableOpacity>
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search..."
+        value={search}
+        onChangeText={(text) => searchCards(text)}
+      />
+      <FlatList
+        data={search ? filteredCards : cards}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.items}>
+            <View style={styles.itemContent}>
+              <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+              <View style={styles.textcontainer}>
+                <Text style={styles.name}>{item.bank}</Text>
+                <Text style={styles.subname}>{item.number}</Text>
+              </View>
+              <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
+            </View>
+          </TouchableOpacity>
+        )}
+      />
       <TouchableOpacity style={styles.addcards} onPress={() => setModalOpen(true)}>
         <Icon name="plus" size={45} color="white" />
       </TouchableOpacity>
@@ -44,7 +70,7 @@ function BankingCardsScreen() {
             </TouchableOpacity>
             <Icon name="credit-card" size={100} color="#1c2633" />
             <Text style={styles.addCardTitle}>Add New Card</Text>
-            <AddCardsForm />
+            <AddCardsForm addCard={addCard} closeModal={() => setModalOpen(false)} />
           </View>
         </View>
       </Modal>
@@ -63,6 +89,14 @@ const styles = StyleSheet.create({
     margin: 30,
     fontFamily: "Kanit-Bold",
     color: "black"
+  },
+  searchBar: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    margin: 20,
   },
   items: {
     flexDirection: 'row',

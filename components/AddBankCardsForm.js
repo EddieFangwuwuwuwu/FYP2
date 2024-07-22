@@ -4,7 +4,7 @@ import { StyleSheet, View, TextInput, Button, Text, TouchableOpacity } from 'rea
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-function AddCardsForm() {
+function AddCardsForm({ addCard, closeModal }) {
   const [selectedCardType, setSelectedCardType] = useState('Credit Card');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -14,9 +14,15 @@ function AddCardsForm() {
       <Formik
         initialValues={{ cardName: '', cardNumber: '' }}
         onSubmit={(values) => {
-          console.log(values);
-          console.log('Selected Card Type:', selectedCardType);
-          console.log('Expiration Date:', date);
+          const newCard = {
+            id: Math.random().toString(),
+            bank: values.cardName,
+            number: values.cardNumber,
+            cardType: selectedCardType,
+            expirationDate: date.toDateString()
+          };
+          addCard(newCard);
+          closeModal();
         }}
       >
         {(props) => (
@@ -114,8 +120,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   picker: {
-    marginTop:0,
-    
     width: '100%',
   },
   pickerItem: {
