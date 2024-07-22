@@ -1,6 +1,7 @@
 import React,{useState} from "react";
 import {Text,View,TouchableOpacity,StyleSheet,Modal} from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome'
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Search from "./Search/SearchBar";
 
 function SharingScreen(){
   const [modalOpen, setModalOpen] = useState(false);
@@ -20,6 +21,7 @@ function SharingScreen(){
             <TouchableOpacity style={styles.closeButton} onPress={() => setModalOpen(false)}>
               <Icon name="close" size={45} color="black" />
             </TouchableOpacity>
+            <Search/>
           </View>
         </View>
       </Modal>
@@ -60,7 +62,7 @@ const styles= StyleSheet.create({
 
       modalContent: {
         width: '100%',
-        backgroundColor: 'white',
+        backgroundColor: '#f7f7f7',
         borderRadius: 10,
         padding: 20,
         alignItems: 'center'
