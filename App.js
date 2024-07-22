@@ -4,6 +4,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import AntDesignIcon from 'react-native-vector-icons/AntDesign'
 import { NavigationContainer } from '@react-navigation/native';
 import BankingcardsScreen from './components/BankingCards';
 import CategoryScreen from './components/Category';
@@ -28,11 +29,19 @@ const StackNav = () => {
           return (
             <Icon name="bars" size={30} color="#1c1c1c" onPress={() => navigation.dispatch(DrawerActions.openDrawer())} />
           );
-        }
+        },
       }}>
-      <Stack.Screen name="BankingCards" component={BankingcardsScreen} />
+      <Stack.Screen name="BankingCards" component={BankingcardsScreen}  options={{
+          headerRight: () => (
+            <AntDesignIcon name="search1" size={30} color="#1c1c1c" />
+          ),
+          }} />
       <Stack.Screen name="AppGuide" component={AppGuideScreen} />
-      <Stack.Screen name="Category" component={CategoryScreen} />
+      <Stack.Screen name="Category" component={CategoryScreen}  options={{
+          headerRight: () => (
+            <AntDesignIcon name="search1" size={30} color="#1c1c1c" />
+          ),
+          }} />
       <Stack.Screen name="Sharing" component={SharingScreen} />
       <Stack.Screen name="Setting" component={Setting} />
       <Stack.Screen name="accInfo" component={AccInfoScreen} />
