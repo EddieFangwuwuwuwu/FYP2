@@ -5,30 +5,31 @@ import AddCardsForm from "./AddBankCardsForm";
 
 function BankingCardsScreen() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [cards, setCards] = useState([
+    { cardName: 'Hong Leong', cardNumber: '******118', cardType: 'Credit Card', expirationDate: '12/24' },
+    { cardName: 'Public Bank', cardNumber: '******557', cardType: 'Debit Card', expirationDate: '11/23' },
+  ]);
+
+  const addCard = (newCard) => {
+    setCards([...cards, newCard]);
+    setModalOpen(false); // Close the modal after adding the card
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My cards</Text>
-      <TouchableOpacity style={styles.items}>
-        <View style={styles.itemContent}>
-          <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-          <View style={styles.textcontainer}>
-            <Text style={styles.name}>Hong Leong</Text>
-            <Text style={styles.subname}>******118</Text>
+      {cards.map((card, index) => (
+        <TouchableOpacity key={index} style={styles.items}>
+          <View style={styles.itemContent}>
+            <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+            <View style={styles.textcontainer}>
+              <Text style={styles.name}>{card.cardName}</Text>
+              <Text style={styles.subname}>{card.cardNumber}</Text>
+            </View>
+            <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
           </View>
-          <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.items}>
-        <View style={styles.itemContent}>
-          <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-          <View style={styles.textcontainer}>
-            <Text style={styles.name}>Public Bank</Text>
-            <Text style={styles.subname}>******557</Text>
-          </View>
-          <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      ))}
       <TouchableOpacity style={styles.addcards} onPress={() => setModalOpen(true)}>
         <Icon name="plus" size={45} color="white" />
       </TouchableOpacity>
@@ -44,7 +45,7 @@ function BankingCardsScreen() {
             </TouchableOpacity>
             <Icon name="credit-card" size={100} color="#1c2633" />
             <Text style={styles.addCardTitle}>Add New Card</Text>
-            <AddCardsForm />
+            <AddCardsForm addCard={addCard} />
           </View>
         </View>
       </Modal>
