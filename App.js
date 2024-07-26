@@ -20,11 +20,13 @@ const StackNav = () => {
   const Stack = createNativeStackNavigator();
   const navigation = useNavigation();
   const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const renderHeaderRight = () => (
     <SearchBarAnimation 
       onClose={() => setSearchVisible(false)} 
       onOpen={() => setSearchVisible(true)} 
+      onChangeText={setSearchQuery} 
     />
   );
 
@@ -41,12 +43,13 @@ const StackNav = () => {
       }}>
       <Stack.Screen 
         name="BankingCards" 
-        component={BankingcardsScreen} 
         options={{
           headerTitle: searchVisible ? '' : 'BankingCards',
           headerRight: renderHeaderRight,
         }} 
-      />
+      >
+        {props => <BankingcardsScreen {...props} searchQuery={searchQuery} />}
+      </Stack.Screen>
       <Stack.Screen 
         name="Category" 
         component={CategoryScreen} 

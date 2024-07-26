@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
 
-function BankingCardsScreen() {
+function BankingCardsScreen({ searchQuery }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [cards, setCards] = useState([
     { cardName: 'Hong Leong', cardNumber: '******118', cardType: 'Credit Card', expirationDate: '12/24' },
@@ -15,21 +15,29 @@ function BankingCardsScreen() {
     setModalOpen(false); // Close the modal after adding the card
   };
 
+  const filteredCards = cards.filter(card => 
+    card.cardName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My cards</Text>
-      {cards.map((card, index) => (
-        <TouchableOpacity key={index} style={styles.items}>
-          <View style={styles.itemContent}>
-            <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-            <View style={styles.textcontainer}>
-              <Text style={styles.name}>{card.cardName}</Text>
-              <Text style={styles.subname}>{card.cardNumber}</Text>
+      <FlatList
+        data={filteredCards}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.items}>
+            <View style={styles.itemContent}>
+              <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+              <View style={styles.textcontainer}>
+                <Text style={styles.name}>{item.cardName}</Text>
+                <Text style={styles.subname}>{item.cardNumber}</Text>
+              </View>
+              <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
             </View>
-            <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-          </View>
-        </TouchableOpacity>
-      ))}
+          </TouchableOpacity>
+        )}
+      />
       <TouchableOpacity style={styles.addcards} onPress={() => setModalOpen(true)}>
         <Icon name="plus" size={45} color="white" />
       </TouchableOpacity>

@@ -3,7 +3,7 @@ import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import AntIcon from 'react-native-vector-icons/AntDesign';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
-function SearchBarAnimation({ onClose, onOpen }) {
+function SearchBarAnimation({ onClose, onOpen, onChangeText }) {
     const animation = useSharedValue(0);
     const [value, setValue] = useState(0);
 
@@ -21,6 +21,7 @@ function SearchBarAnimation({ onClose, onOpen }) {
             animation.value = 0;
             setValue(0);
             onClose();
+            onChangeText(''); // Reset search query
         } else {
             animation.value = 1;
             setValue(1);
@@ -46,6 +47,7 @@ function SearchBarAnimation({ onClose, onOpen }) {
                         placeholder='Search here'
                         style={styles.searchText}
                         autoFocus
+                        onChangeText={onChangeText}
                     />
                 )}
                 {value === 1 && (
@@ -68,9 +70,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    
     closeIconContainer: {
-        paddingBottom:3
+        paddingBottom: 3
     },
     searchBar: {
         height: 50,
@@ -88,9 +89,8 @@ const styles = StyleSheet.create({
     icon: {
         padding: 10,
     },
-
-    iconContainer:{
-        left:26
+    iconContainer: {
+        left: 26
     }
 });
 
