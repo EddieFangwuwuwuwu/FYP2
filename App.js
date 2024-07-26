@@ -4,7 +4,6 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import AntDesignIcon from 'react-native-vector-icons/AntDesign';
 import { NavigationContainer } from '@react-navigation/native';
 import BankingcardsScreen from './components/BankingCards';
 import CategoryScreen from './components/Category';
@@ -52,12 +51,13 @@ const StackNav = () => {
       </Stack.Screen>
       <Stack.Screen 
         name="Category" 
-        component={CategoryScreen} 
         options={{
           headerTitle: searchVisible ? '' : 'Category',
           headerRight: renderHeaderRight,
         }} 
-      />
+      >
+        {props => <CategoryScreen {...props} searchQuery={searchQuery} />}
+      </Stack.Screen>
       <Stack.Screen name="AppGuide" component={AppGuideScreen} />
       <Stack.Screen name="Sharing" component={SharingScreen} />
       <Stack.Screen name="Setting" component={Setting} />
