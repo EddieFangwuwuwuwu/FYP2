@@ -5,6 +5,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 function AddCardsForm({ addCard }) {
+  const [selectedBankType, setSelectedBankType] = useState('Hong Leong Bank');
   const [selectedCardType, setSelectedCardType] = useState('Credit Card');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -12,10 +13,10 @@ function AddCardsForm({ addCard }) {
   return (
     <View style={styles.container}>
       <Formik
-        initialValues={{ cardName: '', cardNumber: '' }}
+        initialValues={{ cardNumber: '' }}
         onSubmit={(values) => {
           const newCard = {
-            cardName: values.cardName,
+            cardName: selectedBankType,
             cardNumber: values.cardNumber,
             cardType: selectedCardType,
             expirationDate: date.toDateString(),
@@ -26,12 +27,23 @@ function AddCardsForm({ addCard }) {
         {(props) => (
           <View style={styles.form}>
             <Text style={styles.label}>Banking Card Holder Name:</Text>
-            <TextInput
-              placeholder="Enter Card holder Name"
-              onChangeText={props.handleChange('cardName')}
-              value={props.values.cardName}
-              style={styles.input}
-            />
+            <View style={styles.pickerContainer}>
+            <Picker
+                selectedValue={selectedBankType}
+                onValueChange={(itemValue) => setSelectedBankType(itemValue)}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+              >
+                <Picker.Item label="Public Bank Berhad " value="Public Bank Berhad " />
+                <Picker.Item label="Hong Leong Bank Berhad" value="Hong Leong Bank Berhad" />
+                <Picker.Item label="Maybank Berhad" value="Maybank Berhad" />
+                <Picker.Item label="RHB Bank" value="RHB Bank" />
+                <Picker.Item label="Bank Islam Malaysia Berhad" value="Bank Islam Malaysia Berhad" />
+                <Picker.Item label="Bank Rakyat " value="Bank Rakyat" />
+                <Picker.Item label="OCBC Bank (Malaysia) Berhad" value="OCBC Bank (Malaysia) Berhad" />
+                <Picker.Item label="Affin Bank Berhad" value="Affin Bank Berhad" />
+              </Picker>
+              </View>
 
             <Text style={styles.label}>Banking Card Number:</Text>
             <TextInput

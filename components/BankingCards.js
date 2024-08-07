@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Avatar } from 'react-native-paper';
 import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
@@ -6,21 +7,51 @@ import AddCardsForm from "./AddBankCardsForm";
 function BankingCardsScreen({ searchQuery }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [cards, setCards] = useState([
-    { cardName: 'Hong Leong', cardNumber: '******118', cardType: 'Credit Card', expirationDate: '12/24' },
-    { cardName: 'Public Bank', cardNumber: '******557', cardType: 'Debit Card', expirationDate: '11/23' },
+    { cardName: 'Hong Leong', cardNumber: '17099877118', cardType: 'Credit Card', expirationDate: '12/24' },
+    { cardName: 'Public Bank', cardNumber: '57300099557', cardType: 'Debit Card', expirationDate: '11/23' },
   ]);
+
+  const user = {
+    name: "Eddie",
+    profilePicture: require('../Image/profile.jpg')
+  };
 
   const addCard = (newCard) => {
     setCards([...cards, newCard]);
     setModalOpen(false); // Close the modal after adding the card
   };
 
-  const filteredCards = cards.filter(card => 
+  const filteredCards = cards.filter(card =>
     card.cardName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <View style={styles.container}>
+      <View style={styles.userSection}>
+        <Avatar.Image source={user.profilePicture} size={70} style={styles.userAvatar} />
+        <View style={{ flexDirection: 'column', marginTop: 10, marginLeft: 15 }}>
+          <Text style={{ fontSize: 20 }}>Welcome</Text>
+          <Text style={styles.userName}>{user.name}</Text>
+        </View>
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.smallButton}>
+          <Icon name="exchange" size={20} color="#1c2633" />
+          <Text style={styles.buttonText}>Transfer</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.smallButton}>
+          <Icon name="credit-card" size={20} color="#1c2633" />
+          <Text style={styles.buttonText}>Withdraw</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.smallButton}>
+          <Icon name="line-chart" size={20} color="#1c2633" />
+          <Text style={styles.buttonText}>Insights</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.smallButton}>
+          <Icon name="cogs" size={20} color="#1c2633" />
+          <Text style={styles.buttonText}>Settings</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.title}>My cards</Text>
       <FlatList
         data={filteredCards}
@@ -62,10 +93,60 @@ function BankingCardsScreen({ searchQuery }) {
 }
 
 const styles = StyleSheet.create({
+  userSection: {
+    flexDirection: 'row',
+    padding: 20,
+    backgroundColor: 'white',
+    width: '90%',
+    borderRadius: 10,
+    left: 20,
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 15,
+  },
+  userAvatar: {
+    margin: 10
+  },
+  userName: {
+    fontSize: 30,
+    fontWeight: 'bold'
+  },
   container: {
     flex: 1,
     padding: 0,
     backgroundColor: '#f4f4f4'
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 30,
+    marginVertical: 10,
+    width: '90%',
+    borderRadius: 10,
+    right:15,
+    paddingVertical: 10,
+  },
+  smallButton: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '21%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 15,
+    marginHorizontal: 15
+  },
+  buttonText: {
+    color: '#1c2633',
+    fontSize: 12,
+    marginTop: 5,
   },
   title: {
     fontSize: 50,

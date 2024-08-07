@@ -14,6 +14,8 @@ import DrawerContent from './DrawerContent';
 import AccInfoScreen from './SettingScreen/AccInfoScreen';
 import EditExpireDate from './SettingScreen/EditExpireDate';
 import SearchBarAnimation from './components/Search/SearchBarAnimation';
+import LoginPage from './components/LoginPage';
+import SignUpPage from './components/SignUp';
 
 const StackNav = () => {
   const Stack = createNativeStackNavigator();
@@ -82,9 +84,11 @@ const DrawerNav = () => {
 
 function App() {
   return (
-    <NavigationContainer>
-      <DrawerNav />
-    </NavigationContainer>
+    //<NavigationContainer>
+     // <DrawerNav />
+    //</NavigationContainer>
+   // < LoginPage/>
+    <SignUpPage/>
   );
 }
 
