@@ -87,8 +87,8 @@ function App() {
     //<NavigationContainer>
      // <DrawerNav />
     //</NavigationContainer>
-   // < LoginPage/>
-    <SignUpPage/>
+   < LoginPage/>
+    //<SignUpPage/>
   );
 }
 
