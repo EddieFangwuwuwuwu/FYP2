@@ -3,47 +3,58 @@ import { Formik } from 'formik';
 import { StyleSheet, View, TextInput, Button, Text, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { addNewCard  } from './api/api';  // Import the function from api.js
 
 function AddCardsForm({ addCard }) {
-  const [selectedBankType, setSelectedBankType] = useState('Hong Leong Bank');
+  const [selectedBankType, setSelectedBankType] = useState('Hong Leong Bank Berhad');
   const [selectedCardType, setSelectedCardType] = useState('Credit Card');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const handleAddNewCard = async (values) => {
+    const newCard = {
+      bankType: selectedBankType,
+      cardNumber: values.cardNumber,
+      cardType: selectedCardType,
+      cardExpDate: date.toISOString().split('T')[0],  // Format date to 'YYYY-MM-DD'
+    };
+
+    try {
+      const response = await addNewCard(newCard);
+      console.log('Card added:', response);
+      addCard(newCard);  // Add the card to the local state
+    } catch (error) {
+      console.error('Failed to add card:', error);
+      // Optionally show an alert to the user
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Formik
         initialValues={{ cardNumber: '' }}
-        onSubmit={(values) => {
-          const newCard = {
-            cardName: selectedBankType,
-            cardNumber: values.cardNumber,
-            cardType: selectedCardType,
-            expirationDate: date.toDateString(),
-          };
-          addCard(newCard);
-        }}
+        onSubmit={handleAddNewCard}
       >
         {(props) => (
           <View style={styles.form}>
-            <Text style={styles.label}>Banking Card Holder Name:</Text>
+            <Text style={styles.label}>Bank Type:</Text>
             <View style={styles.pickerContainer}>
-            <Picker
+              <Picker
                 selectedValue={selectedBankType}
                 onValueChange={(itemValue) => setSelectedBankType(itemValue)}
                 style={styles.picker}
                 itemStyle={styles.pickerItem}
               >
-                <Picker.Item label="Public Bank Berhad " value="Public Bank Berhad " />
+                <Picker.Item label="Public Bank Berhad" value="Public Bank Berhad" />
                 <Picker.Item label="Hong Leong Bank Berhad" value="Hong Leong Bank Berhad" />
                 <Picker.Item label="Maybank Berhad" value="Maybank Berhad" />
                 <Picker.Item label="RHB Bank" value="RHB Bank" />
                 <Picker.Item label="Bank Islam Malaysia Berhad" value="Bank Islam Malaysia Berhad" />
-                <Picker.Item label="Bank Rakyat " value="Bank Rakyat" />
+                <Picker.Item label="Bank Rakyat" value="Bank Rakyat" />
                 <Picker.Item label="OCBC Bank (Malaysia) Berhad" value="OCBC Bank (Malaysia) Berhad" />
                 <Picker.Item label="Affin Bank Berhad" value="Affin Bank Berhad" />
               </Picker>
-              </View>
+            </View>
 
             <Text style={styles.label}>Banking Card Number:</Text>
             <TextInput
@@ -131,7 +142,6 @@ const styles = StyleSheet.create({
   },
   picker: {
     marginTop:0,
-    
     width: '100%',
   },
   pickerItem: {

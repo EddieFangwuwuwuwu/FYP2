@@ -1,22 +1,33 @@
 import React, { useState } from 'react';
 import { Formik } from 'formik';
-import { StyleSheet, View, TextInput, Button, Text } from 'react-native';
+import { StyleSheet, View, TextInput, Button, Text, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { createCategory } from './api/api'; // Import your createCate function
 
 function CreateCategoryForm({ addCategory }) {
     const [selectedCategoryType, setCategoryType] = useState('Credit Card');
+
+    const handleSubmit = async (values) => {
+        const newCategory = {
+            cateName: values.categoryName,
+            cateType: selectedCategoryType,
+        };
+
+        try {
+            const response = await createCategory(newCategory);
+            Alert.alert('Success', 'Category created successfully');
+            addCategory(newCategory); // Update the UI with the new category
+        } catch (error) {
+            Alert.alert('Error', 'Failed to create category');
+            console.error('Error creating category:', error);
+        }
+    };
 
     return (
         <View style={styles.container}>
             <Formik
                 initialValues={{ categoryName: '' }}
-                onSubmit={(values) => {
-                    const newCategory = {
-                        categoryName: values.categoryName,
-                        categoryType: selectedCategoryType,
-                    };
-                    addCategory(newCategory);
-                }}
+                onSubmit={handleSubmit} // Use the handleSubmit function
             >
                 {(props) => (
                     <View style={styles.form}>

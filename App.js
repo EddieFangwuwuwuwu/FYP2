@@ -71,6 +71,7 @@ const StackNav = () => {
 
 const DrawerNav = () => {
   const Drawer = createDrawerNavigator();
+  
   return (
     <Drawer.Navigator
       drawerContent={props => <DrawerContent {...props} />}
@@ -82,13 +83,25 @@ const DrawerNav = () => {
   );
 };
 
+const MainStackNav = () => {
+  const Stack = createNativeStackNavigator();
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}>
+      <Stack.Screen name="Login" component={LoginPage} />
+      <Stack.Screen name="SignUp" component={SignUpPage} />
+      <Stack.Screen name="Drawer" component={DrawerNav} />
+    </Stack.Navigator>
+  );
+};
+
 function App() {
   return (
-    //<NavigationContainer>
-     // <DrawerNav />
-    //</NavigationContainer>
-   < LoginPage/>
-    //<SignUpPage/>
+    <NavigationContainer>
+      <MainStackNav />
+    </NavigationContainer>
   );
 }
 

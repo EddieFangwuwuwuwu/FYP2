@@ -1,21 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CreateCategoryForm from './CreateCategoryForm';
+import { fetchCategories } from './api/api';  // Import your fetchCategories function
 
-
-function CategoryScreen({ searchQuery }) {
+function CategoryScreen({ searchQuery = '' }) {  // Provide a default value for searchQuery
     const [modalOpen, setModalOpen] = useState(false);
     const [categories, setCategories] = useState([]);
 
-    const addCategory = (newCategory) => {
-        setCategories([...categories, newCategory]);
-        setModalOpen(false); // Close the modal after adding the category
+    // Fetch categories from the API
+    const loadCategories = async () => {
+        try {
+            const fetchedCategories = await fetchCategories();
+            setCategories(fetchedCategories);
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+        }
     };
 
-    const filteredCategories = categories.filter(category =>
-        category.categoryName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    useEffect(() => {
+        loadCategories(); // Load categories when the component is mounted
+    }, []);
+
+    const addCategory = (newCategory) => {
+        setCategories([...categories, newCategory]);
+        setModalOpen(false);
+    };
+
+    const filteredCategories = categories.filter(category => {
+        if (!category.cateName) {
+            console.warn('Category missing cateName:', category);
+            return false; // Exclude this category from the filtered list
+        }
+        return category.cateName.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     return (
         <View style={styles.container}>
@@ -30,8 +48,8 @@ function CategoryScreen({ searchQuery }) {
                             <View style={styles.itemContent}>
                                 <Icon name="folder" size={45} color="white" style={styles.icon} />
                                 <View style={styles.textcontainer}>
-                                    <Text style={styles.name}>{item.categoryName}</Text>
-                                    <Text style={styles.subname}>{item.categoryType}</Text>
+                                    <Text style={styles.name}>{item.cateName}</Text> 
+                                    <Text style={styles.subname}>{item.cateType}</Text>  
                                 </View>
                                 <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
                             </View>

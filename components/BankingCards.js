@@ -1,51 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar } from 'react-native-paper';
 import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
+import { fetchCards } from './api/api';  // Import your fetchCards function
 
-function BankingCardsScreen({ searchQuery }) {
+function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
+  const [username, setUsername] = useState(route.params?.username || "Guest");
   const [modalOpen, setModalOpen] = useState(false);
-  const [cards, setCards] = useState([
-    { cardName: 'Hong Leong', cardNumber: '17099877118', cardType: 'Credit Card', expirationDate: '12/24' },
-    { cardName: 'Public Bank', cardNumber: '57300099557', cardType: 'Debit Card', expirationDate: '11/23' },
-  ]);
+  const [cards, setCards] = useState([]);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  
+  useEffect(() => {
+    if (route.params?.username) {
+      setUsername(route.params.username);
+      navigation.setParams({ username: route.params.username });
+    }
+  }, [route.params?.username]);
 
-  const user = {
-    name: "Eddie",
-    profilePicture: require('../Image/profile.jpg')
+  // Fetch cards from the API
+  const loadCards = async () => {
+    try {
+        const fetchedCards = await fetchCards();
+        console.log('Fetched Cards:', fetchedCards); // Log the fetched data
+        setCards(fetchedCards);
+    } catch (error) {
+        console.error('Failed to fetch cards:', error);
+    }
   };
+
+  useEffect(() => {
+    loadCards(); // Load cards when the component is mounted
+  }, []);
 
   const addCard = (newCard) => {
     setCards([...cards, newCard]);
-    setModalOpen(false); // Close the modal after adding the card
+    setModalOpen(false);
   };
 
   const filteredCards = cards.filter(card =>
-    card.cardName.toLowerCase().includes(searchQuery.toLowerCase())
+    card.bank_type && card.bank_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
+  
   return (
     <View style={styles.container}>
       <View style={styles.userSection}>
-        <Avatar.Image source={user.profilePicture} size={70} style={styles.userAvatar} />
+        <Avatar.Image source={require('../Image/profile.jpg')} size={70} style={styles.userAvatar} />
         <View style={{ flexDirection: 'column', marginTop: 10, marginLeft: 15 }}>
           <Text style={{ fontSize: 20 }}>Welcome</Text>
-          <Text style={styles.userName}>{user.name}</Text>
+          <Text style={styles.userName}>{username || "Guest"}</Text> 
         </View>
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.smallButton}>
           <Icon name="exchange" size={20} color="#1c2633" />
-          <Text style={styles.buttonText}>Transfer</Text>
+          <Text style={styles.buttonText}>add card</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton}>
           <Icon name="credit-card" size={20} color="#1c2633" />
-          <Text style={styles.buttonText}>Withdraw</Text>
+          <Text style={styles.buttonText}>create category</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton}>
           <Icon name="line-chart" size={20} color="#1c2633" />
-          <Text style={styles.buttonText}>Insights</Text>
+          <Text style={styles.buttonText}>sharing account</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton}>
           <Icon name="cogs" size={20} color="#1c2633" />
@@ -61,8 +79,8 @@ function BankingCardsScreen({ searchQuery }) {
             <View style={styles.itemContent}>
               <Icon name="credit-card" size={45} color="white" style={styles.icon} />
               <View style={styles.textcontainer}>
-                <Text style={styles.name}>{item.cardName}</Text>
-                <Text style={styles.subname}>{item.cardNumber}</Text>
+                <Text style={styles.name}>{item.bank_type}</Text>  
+                <Text style={styles.subname}>{item.card_number}</Text>
               </View>
               <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
             </View>
@@ -92,6 +110,8 @@ function BankingCardsScreen({ searchQuery }) {
   );
 }
 
+export default BankingCardsScreen;
+
 const styles = StyleSheet.create({
   userSection: {
     flexDirection: 'row',
@@ -112,21 +132,21 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 30,
-    fontWeight: 'bold'
+    fontFamily: "Poppins-SemiBold",
+    color: '#1c2633'
   },
   container: {
     flex: 1,
     padding: 0,
-    backgroundColor: '#f4f4f4'
+    backgroundColor: '#f4f4f4',
+    paddingHorizontal: 20,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 30,
     marginVertical: 10,
-    width: '90%',
+    width: '100%',
     borderRadius: 10,
-    right:15,
     paddingVertical: 10,
   },
   smallButton: {
@@ -135,44 +155,46 @@ const styles = StyleSheet.create({
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '21%',
+    width: '22%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 15,
-    marginHorizontal: 15
   },
   buttonText: {
     color: '#1c2633',
     fontSize: 12,
     marginTop: 5,
+    fontFamily: 'Poppins-Regular',
   },
   title: {
     fontSize: 50,
     margin: 30,
-    fontFamily: "Kanit-Bold",
+    fontFamily: "Poppins-SemiBold",
     color: "black"
   },
   items: {
     flexDirection: 'row',
-    marginLeft: 18,
-    width: "92%",
+    width: "100%",
     height: 60,
     borderRadius: 100,
     backgroundColor: '#1c2633',
     marginVertical: 10,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
   },
   name: {
     color: 'white',
     paddingTop: 0,
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
     paddingLeft: 20
   },
   subname: {
     color: 'white',
     fontSize: 15,
+    fontFamily: 'Poppins-Regular',
     paddingLeft: 20
   },
   icon: {
@@ -183,13 +205,15 @@ const styles = StyleSheet.create({
   itemContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    flex: 1,
   },
   iconRight: {
-    marginLeft: 130,
+    position: 'absolute',
+    right: 20,
   },
   textcontainer: {
-    flexDirection: 'column'
+    flexDirection: 'column',
+    flex: 1,
   },
   addcards: {
     position: 'absolute',
@@ -223,9 +247,7 @@ const styles = StyleSheet.create({
   addCardTitle: {
     fontSize: 24,
     justifyContent: 'center',
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
     marginBottom: 20
   },
 });
-
-export default BankingCardsScreen;

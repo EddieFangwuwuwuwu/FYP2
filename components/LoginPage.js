@@ -1,177 +1,210 @@
-import React from 'react';
-import { View, StyleSheet, Image, Text, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, Image, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/AntDesign';
-import FeatherIcon from 'react-native-vector-icons/Feather';
+import { useNavigation } from '@react-navigation/native';
+import { loginUser } from './api/api';
 
 function LoginPage() {
+  const navigation = useNavigation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    try {
+      const response = await loginUser({ email, password });
+      if (response.token) {
+        const username = response.user.username;
+        console.log('Navigating with username:', username); // Log the username
+        navigation.navigate('Drawer', {
+          screen: 'DrawerHome', // Directly navigate to the DrawerHome screen
+          params: {
+            screen: 'BankingCards', // Navigate to the BankingCards screen
+            params: {
+              username, // Pass the username if needed
+            }, },
+          });
+      } else {
+        Alert.alert('Login failed', 'Invalid credentials');
+      }
+    } catch (error) {
+      Alert.alert('Login Error', 'Something went wrong. Please try again.');
+    }
+  };
+
   return (
-    <View style={styles.mainContainer}>
-      <View style={styles.logo_container}>
+    <View style={styles.container}>
+      <View style={styles.logoContainer}>
         <Image
           style={styles.logo}
           source={require('../Image/logo.png')}
         />
       </View>
-      <View style={styles.container}>
-        <Text style={styles.login_header}>Login</Text>
-        <View style={styles.textfield}>
-          <Icon name='user' color='#1c2633' style={styles.smallicon} />
-          <TextInput placeholder='Enter username' style={styles.textinput} />
-        </View>
-        <View style={styles.textfield}>
-          <Icon name='lock1' color='#1c2633' style={styles.smallicon2} />
-          <TextInput placeholder='Enter password' secureTextEntry style={styles.textinput} />
-        </View>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Log in to your account</Text>
+      </View>
+      <View style={styles.textInputContainer}>
+        <Icon name="user" size={24} style={styles.icon} />
+        <TextInput 
+          placeholder='Enter your email'
+          value={email}
+          onChangeText={setEmail}
+          style={styles.textInput}
+        />
+      </View>
+      <View style={styles.textInputContainer}>
+        <Icon name="lock" size={24} style={styles.icon} />
+        <TextInput 
+          placeholder='Enter your password'
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          style={styles.textInput}
+        />
       </View>
       <View style={styles.forgotPasswordContainer}>
-        <Text style={styles.forgotPasswordText}>Forgot password</Text>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Log in</Text>
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.orText}>----- Or continue as ---------</Text>
-        </View>
-      </View>
-      <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity style={styles.bottomButton}>
-          <FeatherIcon name='user-plus' color='white' style={styles.bottomButtonIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomButton}>
-          <Icon name='google' color='white' style={styles.bottomButtonIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomButton}>
-          <Icon name='facebook-square' color='white' style={styles.bottomButtonIcon} />
+        <TouchableOpacity>
+          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.bottomButtonLabel}>
-        <Text style={styles.bottomButtonLabelText}>Sign Up</Text>
-        <Text style={styles.bottomButtonLabelText}>Google</Text>
-        <Text style={styles.bottomButtonLabelText}>Facebook</Text>
+      <View>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Log In</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.orText}>or continue with</Text>
+      <View style={styles.googleContainer}>
+        <TouchableOpacity style={styles.google}>
+          <Image source={require("../Image/google.jpg")} style={styles.googleLogo}/>
+          <Text style={styles.googleText}>Google</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.signUpContainer}>
+        <Text style={styles.signUpText}>Don't have an account?</Text>
+        <TouchableOpacity style={styles.signUpButton} onPress={() => navigation.navigate('SignUp')}>
+          <Text style={styles.signUpButtonText}>Sign Up</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+export default LoginPage;
+
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  logo_container: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   container: {
+    flex: 1,
+    marginTop: 100,
+    paddingHorizontal: 20,
+  },
+  logoContainer: {
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -5,
   },
   logo: {
-    width: 300,
-    height: 300,
-    marginRight: 50,
-    marginTop: 80,
+    width: 100,
+    height: 100,
+    marginBottom: 20,
   },
-  login_header: {
-    marginBottom: 10,
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#1c2633',
-    fontFamily:'Poppins-Regular',
+  titleContainer: {
+    alignItems: 'flex-start',
+    marginBottom: 30,
   },
-  textfield: {
-    borderRadius: 50,
-    borderWidth: 1,
+  title: {
+    fontSize: 30,
+    fontWeight: '600',
+    fontFamily: "Poppins-SemiBold",
+    color: 'black',
+  },
+  subtitle: {
+    fontSize: 18,
+    fontFamily: "Poppins-Regular",
+    color: 'grey',
+  },
+  textInputContainer: {
     flexDirection: 'row',
-    borderColor: '#1c2633',
-    width: '90%',
-    marginBottom: 10,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 25,
     paddingHorizontal: 10,
+    marginBottom: 20,
+    width: '100%',
   },
-  textinput: {
-    flex: 1,
-  },
-  smallicon: {
+  icon: {
     marginRight: 10,
-    marginLeft: 10,
-    fontSize: 45,
   },
-  smallicon2: {
-    marginTop: 5,
-    marginRight: 15,
-    marginLeft: 10,
-    fontSize: 40,
+  textInput: {
+    flex: 1,
+    height: 50,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginRight: 35,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   forgotPasswordText: {
-    fontWeight: '700',
-  },
-  buttonContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 40,
+    color: 'black',
+    fontFamily: "Poppins-Regular",
   },
   button: {
-    marginTop: 10,
-    marginRight: 50,
     backgroundColor: '#1c2633',
-    width: '80%',
-    borderRadius: 50,
-    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 15,
+    marginBottom: 20,
   },
   buttonText: {
     color: 'white',
-    fontWeight: '700',
     fontSize: 18,
-    fontFamily:'Poppins-Regular',
+    fontFamily: "Poppins-SemiBold",
   },
   orText: {
-    padding: 10,
-    marginRight: 30,
-    fontWeight: '700',
-  },
-  bottomButtonContainer: {
-    flexDirection: 'row',
-    marginLeft: 20,
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    marginRight: 20,
-    paddingLeft: 30,
-    paddingRight: 30,
-  },
-  bottomButton: {
-    backgroundColor: '#1c2633',
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bottomButtonIcon: {
-    fontSize: 40,
-  },
-  bottomButtonLabel: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingLeft: 40,
-    paddingRight: 35,
-    marginLeft: 25,
-    marginRight: 20,
-  },
-  bottomButtonLabelText: {
     fontSize: 15,
-    fontWeight: '500',
-    color: 'grey',
+    textAlign: 'center',
+    paddingVertical: 20,
+    fontFamily: 'Poppins-Regular',
+  },
+  googleContainer: {},
+  google: {
+    borderRadius: 25,
+    borderWidth: 1,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    borderColor: 'black',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  googleText: {
+    color: 'black',
+    fontSize: 15,
+    fontFamily
+: 'Poppins-Regular',
+    textAlign: 'center',
+    marginTop: 2,
+    paddingLeft: 5,
+    paddingVertical: 10,
+  },
+  googleLogo: {
+    width: 24,
+    height: 24,
+  },
+  signUpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  signUpText: {
+    marginHorizontal: 5,
+    fontFamily: 'Poppins-Regular',
+  },
+  signUpButton: {
+    bottom: 1,
+  },
+  signUpButtonText: {
+    fontFamily: 'Poppins-Regular',
+    color: 'black',
   },
 });
-
-export default LoginPage;

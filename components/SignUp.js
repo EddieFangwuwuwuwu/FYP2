@@ -1,8 +1,34 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextInput,TouchableOpacity,Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/AntDesign';
+import { useNavigation } from '@react-navigation/native';
+import { registerUser } from './api/api';
 
 function SignUpPage() {
+  const navigation = useNavigation();
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSignUp = async () => {
+    if (!email || !username || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    const userData = { email, username, password };
+    
+    try {
+      const response = await registerUser(userData);
+      if (response.message === 'User registered successfully!') {
+        Alert.alert('Success', 'Account created successfully!');
+        navigation.navigate('Login'); // Navigate to the Login page
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to register account');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
@@ -14,6 +40,8 @@ function SignUpPage() {
         <TextInput 
           placeholder='Enter your email'
           style={styles.textInput}
+          value={email}
+          onChangeText={setEmail}
         />
       </View>
       <View style={styles.textInputContainer}>
@@ -21,6 +49,8 @@ function SignUpPage() {
         <TextInput 
           placeholder='Enter your username'
           style={styles.textInput}
+          value={username}
+          onChangeText={setUsername}
         />
       </View>
       <View style={styles.textInputContainer}>
@@ -29,31 +59,35 @@ function SignUpPage() {
           placeholder='Enter your password'
           secureTextEntry
           style={styles.textInput}
+          value={password}
+          onChangeText={setPassword}
         />
       </View>
       <View>
-            <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>Sign Up</Text>
-            </TouchableOpacity>
-        </View>
-        <Text style={{fontSize:15,textAlign:'center',paddingVertical:20}}>or continue with</Text>
-        <View style={styles.googleContainer}>
-          <TouchableOpacity style={styles.google}>
-            <Image source={require("../Image/google.jpg")} style={styles.googleLogo}/>
-            <Text style={styles.googleText}>Google</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.signInContainer}>
-          <Text style={styles.signInText}>Don't have an account?</Text>
-          <TouchableOpacity style={styles.signInButton}>
-            <Text style={{fontFamily:'Poppins-Regular',fontWeight:'bold'}}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+          <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={{ fontSize: 15, textAlign: 'center', paddingVertical: 30 }}>or continue with</Text>
+      <View style={styles.googleContainer}>
+        <TouchableOpacity style={styles.google}>
+          <Image source={require("../Image/google.jpg")} style={styles.googleLogo}/>
+          <Text style={styles.googleText}>Google</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.signInContainer}>
+        <Text style={styles.signInText}>Already have an account?</Text>
+        <TouchableOpacity style={styles.signInButton} onPress={() => navigation.navigate('Login')}>
+          <Text style={{ fontFamily: 'Poppins-Regular', fontWeight: 'bold' }}>Sign In</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 export default SignUpPage;
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -96,7 +130,7 @@ const styles = StyleSheet.create({
   },
   buttonText:{
     color:'white',
-    fontSize:20,
+    fontSize:18,
     textAlign:'center',
     padding:10,
     fontFamily:"Poppins-SemiBold"

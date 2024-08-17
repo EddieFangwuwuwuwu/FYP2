@@ -23,16 +23,16 @@ const styles= StyleSheet.create({
     container:{
         flex:1,
         flexDirection:'column',
-        justifyContent:'center'
+        justifyContent:'center',
+        paddingHorizontal:20
     },
 
     option:{
         backgroundColor:'#1c2633',
         justifyContent:'center',
-        width:'90%',
-        borderRadius:5,
+        width:'100%',
+        borderRadius:25,
         height:100,
-        marginLeft:18,
        flexDirection:'row',
        marginBottom:50,
        
