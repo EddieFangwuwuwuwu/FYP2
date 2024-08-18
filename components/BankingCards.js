@@ -3,28 +3,23 @@ import { Avatar } from 'react-native-paper';
 import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
-import { fetchCards } from './api/api';  // Import your fetchCards function
+import { fetchCards } from './api/api';  
+
 
 function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
-  const [username, setUsername] = useState(route.params?.username || "Guest");
+ const userId = route.params?.userId;
+  const username = route.params?.username || "Guest";
   const [modalOpen, setModalOpen] = useState(false);
   const [cards, setCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   
-  useEffect(() => {
-    if (route.params?.username) {
-      setUsername(route.params.username);
-      navigation.setParams({ username: route.params.username });
-    }
-  }, [route.params?.username]);
-
   // Fetch cards from the API
   const loadCards = async () => {
     try {
         const fetchedCards = await fetchCards();
-        console.log('Fetched Cards:', fetchedCards); // Log the fetched data
-        setCards(fetchedCards);
+        const userCards = fetchedCards.filter(card => card.user_id === userId); // Filter cards by userId
+        setCards(userCards);
     } catch (error) {
         console.error('Failed to fetch cards:', error);
     }
@@ -42,7 +37,7 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const filteredCards = cards.filter(card =>
     card.bank_type && card.bank_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
+
   return (
     <View style={styles.container}>
       <View style={styles.userSection}>
@@ -54,15 +49,15 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.smallButton}>
-          <Icon name="exchange" size={20} color="#1c2633" />
+          <Icon name="credit-card" size={20} color="#1c2633" />
           <Text style={styles.buttonText}>add card</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton}>
-          <Icon name="credit-card" size={20} color="#1c2633" />
+          <Icon name="folder-o" size={20} color="#1c2633" />
           <Text style={styles.buttonText}>create category</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton}>
-          <Icon name="line-chart" size={20} color="#1c2633" />
+          <Icon name="user-plus" size={20} color="#1c2633" />
           <Text style={styles.buttonText}>sharing account</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton}>
@@ -73,9 +68,15 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       <Text style={styles.title}>My cards</Text>
       <FlatList
         data={filteredCards}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item) => item.id.toString()} // Corrected keyExtractor
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.items}>
+          <TouchableOpacity 
+            style={styles.items}
+            onPress={() => {
+              setSelectedCard(item);
+              setDetailModalOpen(true);
+            }}
+          >
             <View style={styles.itemContent}>
               <Icon name="credit-card" size={45} color="white" style={styles.icon} />
               <View style={styles.textcontainer}>
@@ -87,6 +88,7 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
           </TouchableOpacity>
         )}
       />
+
       <TouchableOpacity style={styles.addcards} onPress={() => setModalOpen(true)}>
         <Icon name="plus" size={45} color="white" />
       </TouchableOpacity>
@@ -102,7 +104,30 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
             </TouchableOpacity>
             <Icon name="credit-card" size={100} color="#1c2633" />
             <Text style={styles.addCardTitle}>Add New Card</Text>
-            <AddCardsForm addCard={addCard} />
+            <AddCardsForm userId={userId} addCard={addCard} />
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={detailModalOpen}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setDetailModalOpen(false)}>
+              <Icon name="close" size={45} color="black" />
+            </TouchableOpacity>
+            <Icon name="credit-card" size={100} color="#1c2633" />
+            <Text style={styles.addCardTitle}>Card Details</Text>
+            {selectedCard && (
+              <View>
+                <Text style={styles.label}>Bank Type: {selectedCard.bank_type}</Text>
+                <Text style={styles.label}>Card Number: {selectedCard.card_number}</Text>
+                <Text style={styles.label}>Card Type: {selectedCard.card_type}</Text>
+                <Text style={styles.label}>Expiration Date: {new Date(selectedCard.expiration_date).toDateString()}</Text>
+              </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -111,6 +136,7 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
 }
 
 export default BankingCardsScreen;
+
 
 const styles = StyleSheet.create({
   userSection: {
@@ -224,14 +250,14 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   modalContent: {
     width: '100%',
     backgroundColor: '#f7f7f7',
     borderRadius: 10,
     padding: 20,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -248,6 +274,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     justifyContent: 'center',
     fontFamily: 'Poppins-SemiBold',
-    marginBottom: 20
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    marginVertical: 5,
+    fontFamily: 'Poppins-Regular',
   },
 });
+

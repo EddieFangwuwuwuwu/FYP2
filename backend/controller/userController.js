@@ -20,7 +20,7 @@ exports.registerUser =  (req, res) => {
 };
 
 // Log in a user
-exports.loginUser =  (req, res) => {
+exports.loginUser = (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -33,37 +33,51 @@ exports.loginUser =  (req, res) => {
             }
 
             const user = results[0];
+
+
             const isPasswordValid = bcrypt.compareSync(password, user.password);
 
+            
+
             if (!isPasswordValid) {
+                console.log('Invalid password for email:', email);
                 return res.status(401).send({ message: 'Invalid password' });
             }
 
-            const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || 'secret_key', {
-                expiresIn: '1h',
-            });
+            // Store user info in session
+            req.session.user = { id: user.id, username: user.username };
+            console.log("Session set for user:", req.session.user);
 
-            res.status(200).send({ message: 'Login successful', token, user: { id: user.id, username: user.username } });
+            res.status(200).send({ message: 'Login successful', user: { id: user.id, username: user.username } });
         });
     } catch (err) {
         res.status(500).send({ message: 'An error occurred', error: err.message });
     }
 };
+
 
 // Add a new banking card
-exports.addNewCard =  (req, res) => {
+exports.addNewCard = (req, res) => {
     try {
-        const { bankType, cardNumber, cardType, cardExpDate } = req.body;
-        const query = 'INSERT INTO banking_cards (bank_type, card_number, card_type, expiration_date) VALUES (?, ?, ?, ?)';
-        db.query(query, [bankType, cardNumber, cardType, cardExpDate], (err, result) => {
-            if (err) return res.status(500).send({ message: 'Error adding banking card', error: err });
+        const userId = req.session.user ? req.session.user.id : null;
+        console.log("User ID being used:", userId);  // Add this line for debugging
 
-            res.status(201).send({ message: 'Banking card added successfully!' });
-        });
+        if (!userId) {
+            return res.status(400).send({ message: 'User ID is missing. Cannot add card.' });
+        }   
+     console.log("User ID being used:", userId);
+      const { bankType, cardNumber, cardType, cardExpDate } = req.body;
+      const query = 'INSERT INTO banking_cards (user_id, bank_type, card_number, card_type, expiration_date) VALUES (?, ?, ?, ?, ?)';
+      db.query(query, [userId, bankType, cardNumber, cardType, cardExpDate], (err, result) => {
+        if (err) return res.status(500).send({ message: 'Error adding banking card', error: err });
+  
+        res.status(201).send({ message: 'Banking card added successfully!', card: result.insertId });
+      });
     } catch (err) {
-        res.status(500).send({ message: 'An error occurred', error: err.message });
+      res.status(500).send({ message: 'An error occurred', error: err.message });
     }
-};
+  };
+  
 
 // Create a new category
 exports.createCate =  (req, res) => {
@@ -81,10 +95,12 @@ exports.createCate =  (req, res) => {
 };
 
 
-exports.getAllCards = async (req, res) => {
+exports.getAllCards = (req, res) => {
     try {
-        const query = 'SELECT * FROM banking_cards';
-        db.query(query, (err, results) => {
+        const userId = req.session.user.id;  // Get the user ID from the authenticated user
+
+        const query = 'SELECT * FROM banking_cards WHERE user_id = ?';
+        db.query(query, [userId], (err, results) => {
             if (err) {
                 console.error('Error fetching cards:', err);
                 return res.status(500).send({ message: 'Error fetching cards', error: err });
@@ -97,6 +113,7 @@ exports.getAllCards = async (req, res) => {
         res.status(500).send({ message: 'An error occurred', error: err.message });
     }
 };
+
 
 // Fetch all categories
 exports.getAllCategories = async (req, res) => {

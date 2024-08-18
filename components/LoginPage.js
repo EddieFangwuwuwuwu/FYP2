@@ -12,17 +12,15 @@ function LoginPage() {
   const handleLogin = async () => {
     try {
       const response = await loginUser({ email, password });
-      if (response.token) {
-        const username = response.user.username;
-        console.log('Navigating with username:', username); // Log the username
+      if (response.user) {
+        const { id, username } = response.user;
         navigation.navigate('Drawer', {
-          screen: 'DrawerHome', // Directly navigate to the DrawerHome screen
+          screen: 'DrawerHome',
           params: {
-            screen: 'BankingCards', // Navigate to the BankingCards screen
-            params: {
-              username, // Pass the username if needed
-            }, },
-          });
+            screen: 'BankingCards',
+            params: { userId: id, username },
+          },
+        });
       } else {
         Alert.alert('Login failed', 'Invalid credentials');
       }
@@ -30,6 +28,8 @@ function LoginPage() {
       Alert.alert('Login Error', 'Something went wrong. Please try again.');
     }
   };
+  
+
 
   return (
     <View style={styles.container}>

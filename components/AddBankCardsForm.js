@@ -5,7 +5,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addNewCard  } from './api/api';  // Import the function from api.js
 
-function AddCardsForm({ addCard }) {
+function AddCardsForm({ addCard,userId }) {
   const [selectedBankType, setSelectedBankType] = useState('Hong Leong Bank Berhad');
   const [selectedCardType, setSelectedCardType] = useState('Credit Card');
   const [date, setDate] = useState(new Date());
@@ -13,6 +13,7 @@ function AddCardsForm({ addCard }) {
 
   const handleAddNewCard = async (values) => {
     const newCard = {
+      userId,
       bankType: selectedBankType,
       cardNumber: values.cardNumber,
       cardType: selectedCardType,
@@ -22,7 +23,7 @@ function AddCardsForm({ addCard }) {
     try {
       const response = await addNewCard(newCard);
       console.log('Card added:', response);
-      addCard(newCard);  // Add the card to the local state
+      addCard(response);  // Add the card to the local state
     } catch (error) {
       console.error('Failed to add card:', error);
       // Optionally show an alert to the user
