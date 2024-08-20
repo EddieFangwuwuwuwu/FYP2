@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Avatar } from 'react-native-paper';
 import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
 import { fetchCards } from './api/api';  
-
+import { UserContext } from './UserContext'; // Import UserContext
 
 function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
- const userId = route.params?.userId;
-  const username = route.params?.username || "Guest";
+  const { user } = useContext(UserContext); // Access user from context
+  const userId = user?.id;
+  const username = user?.username || "Guest";
+
   const [modalOpen, setModalOpen] = useState(false);
   const [cards, setCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -17,21 +19,43 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   // Fetch cards from the API
   const loadCards = async () => {
     try {
-        const fetchedCards = await fetchCards();
-        const userCards = fetchedCards.filter(card => card.user_id === userId); // Filter cards by userId
-        setCards(userCards);
+      const fetchedCards = await fetchCards();
+      
+  
+      const userCards = fetchedCards.filter(card => card.user_id === userId);
+    
+  
+      if (userCards.length === 0) {
+        console.warn('No cards found for user:', userId);
+      }
+  
+      setCards(userCards);
     } catch (error) {
-        console.error('Failed to fetch cards:', error);
+      console.error('Failed to fetch cards:', error);
     }
   };
-
+  
+  
   useEffect(() => {
     loadCards(); // Load cards when the component is mounted
   }, []);
 
-  const addCard = (newCard) => {
-    setCards([...cards, newCard]);
-    setModalOpen(false);
+  const addCard = async (newCard) => {
+    
+  
+    setCards((prevCards) => {
+      const updatedCards = [...prevCards, newCard];
+      
+      return updatedCards;
+    });
+  
+    setModalOpen(false); // Close the modal after adding a card
+  
+    try {
+      await loadCards(); // Re-fetch the cards after adding a new one
+    } catch (error) {
+      console.error('Failed to load cards:', error);
+    }
   };
 
   const filteredCards = cards.filter(card =>
@@ -67,27 +91,36 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       </View>
       <Text style={styles.title}>My cards</Text>
       <FlatList
-        data={filteredCards}
-        keyExtractor={(item) => item.id.toString()} // Corrected keyExtractor
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.items}
-            onPress={() => {
-              setSelectedCard(item);
-              setDetailModalOpen(true);
-            }}
-          >
-            <View style={styles.itemContent}>
-              <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-              <View style={styles.textcontainer}>
-                <Text style={styles.name}>{item.bank_type}</Text>  
-                <Text style={styles.subname}>{item.card_number}</Text>
-              </View>
-              <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+  data={filteredCards}
+  keyExtractor={(item) => item.id.toString()}
+  renderItem={({ item }) => {
+    if (!item) {
+      console.warn('Undefined item encountered:', item);
+      return null; // Skip rendering this item if it's undefined
+    }
+
+    
+    
+    return (
+      <TouchableOpacity 
+        style={styles.items}
+        onPress={() => {
+          setSelectedCard(item);
+          setDetailModalOpen(true);
+        }}
+      >
+        <View style={styles.itemContent}>
+          <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+          <View style={styles.textcontainer}>
+            <Text style={styles.name}>{item.bank_type}</Text>  
+            <Text style={styles.subname}>{item.card_number}</Text>
+          </View>
+          <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
+        </View>
+      </TouchableOpacity>
+    );
+  }}
+/>
 
       <TouchableOpacity style={styles.addcards} onPress={() => setModalOpen(true)}>
         <Icon name="plus" size={45} color="white" />
@@ -136,6 +169,8 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
 }
 
 export default BankingCardsScreen;
+
+// Styles remain unchanged
 
 
 const styles = StyleSheet.create({

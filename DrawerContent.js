@@ -1,11 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect,useContext } from "react";
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Avatar, Title } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { TouchableOpacity } from "react-native-gesture-handler";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-
+import { UserContext } from './components/UserContext';
 const DrawerList= [
     { icon: 'credit-card', label: 'Banking Cards', navigateTo: 'BankingCards' },
     { icon: 'folder', label: 'Category', navigateTo: 'Category' },
@@ -38,7 +38,8 @@ const DrawerItems = () => {
 
 function DrawerContent(props) {
   const navigation2 = useNavigation();
-  const { username = "Guest" } = props; // Get username from props
+  const username = props.username || "Guest"; // Get username from props
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     console.log('Username in DrawerContent:', username);
@@ -79,7 +80,7 @@ function DrawerContent(props) {
                           <View style={{ flexDirection: 'row', marginTop: 10, marginBottom: 15 }}>
                               <Avatar.Image source={require("./Image/profile.jpg")} size={50} style={{ marginTop: 5 }} />
                               <View style={{ marginLeft: 10, flexDirection: 'column' }}>
-                                  <Title style={styles.title}>{username}</Title>
+                                  <Title style={styles.title}>{user?.username || "Guest"}</Title>
                               </View>
                           </View>
                       </View>

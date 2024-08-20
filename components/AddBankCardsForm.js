@@ -17,19 +17,20 @@ function AddCardsForm({ addCard,userId }) {
       bankType: selectedBankType,
       cardNumber: values.cardNumber,
       cardType: selectedCardType,
-      cardExpDate: date.toISOString().split('T')[0],  // Format date to 'YYYY-MM-DD'
+      cardExpDate: date.toISOString().split('T')[0],
     };
-
+  
+    console.log('New card to be added:', newCard); // Log the new card
+  
     try {
       const response = await addNewCard(newCard);
       console.log('Card added:', response);
       addCard(response);  // Add the card to the local state
     } catch (error) {
       console.error('Failed to add card:', error);
-      // Optionally show an alert to the user
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <Formik

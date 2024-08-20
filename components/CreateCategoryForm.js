@@ -4,13 +4,14 @@ import { StyleSheet, View, TextInput, Button, Text, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { createCategory } from './api/api'; // Import your createCate function
 
-function CreateCategoryForm({ addCategory }) {
+function CreateCategoryForm({ addCategory, userId }) {  // Accept userId as a prop
     const [selectedCategoryType, setCategoryType] = useState('Credit Card');
 
     const handleSubmit = async (values) => {
         const newCategory = {
             cateName: values.categoryName,
             cateType: selectedCategoryType,
+            userId,  // Include userId in the new category
         };
 
         try {

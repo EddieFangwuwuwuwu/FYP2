@@ -17,6 +17,8 @@ router.post('/addNewCard',userController.addNewCard);
 router.post('/createCategory',authenticateUser,userController.createCate);
 router.get('/cards', userController.getAllCards);
 router.get('/categories', userController.getAllCategories);
+router.post('/addCardsToCategory', authenticateUser, userController.addCardsToCategory);
+router.get('/cards/category/:categoryId', authenticateUser, userController.getCardsForCategory);
 
 
 module.exports = router;

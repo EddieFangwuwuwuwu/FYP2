@@ -1,21 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CreateCategoryForm from './CreateCategoryForm';
 import { fetchCategories } from './api/api';  // Import your fetchCategories function
+import { UserContext } from './UserContext';  // Import UserContext
 
-function CategoryScreen({ searchQuery = '' }) {  // Provide a default value for searchQuery
+function CategoryScreen({ navigation,searchQuery = '' }) {
+    const { user } = useContext(UserContext);  // Access user from context
+    const userId = user?.id;
+    
     const [modalOpen, setModalOpen] = useState(false);
     const [categories, setCategories] = useState([]);
 
     // Fetch categories from the API
     const loadCategories = async () => {
         try {
-            const fetchedCategories = await fetchCategories();
+            const fetchedCategories = await fetchCategories(userId);  // Pass userId to fetchCategories
             setCategories(fetchedCategories);
         } catch (error) {
             console.error('Failed to fetch categories:', error);
         }
+    };
+
+    const handleCategoryPress = (category) => {
+        navigation.navigate('CategoryaddCards', { category });
     };
 
     useEffect(() => {
@@ -44,7 +52,7 @@ function CategoryScreen({ searchQuery = '' }) {  // Provide a default value for 
                     data={filteredCategories}
                     keyExtractor={(item, index) => index.toString()}
                     renderItem={({ item }) => (
-                        <TouchableOpacity style={styles.items}>
+                        <TouchableOpacity style={styles.items} onPress={() => handleCategoryPress(item)}>
                             <View style={styles.itemContent}>
                                 <Icon name="folder" size={45} color="white" style={styles.icon} />
                                 <View style={styles.textcontainer}>
@@ -72,7 +80,7 @@ function CategoryScreen({ searchQuery = '' }) {  // Provide a default value for 
                         </TouchableOpacity>
                         <Icon name="folder-o" size={100} color="#1c2633" />
                         <Text style={styles.addCardTitle}>Create New Category</Text>
-                        <CreateCategoryForm addCategory={addCategory} />
+                        <CreateCategoryForm addCategory={addCategory} userId={userId} />
                     </View>
                 </View>
             </Modal>

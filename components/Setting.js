@@ -1,20 +1,22 @@
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import React from 'react';
+import React , {useContext}from 'react';
 import {View,StyleSheet,Text} from 'react-native';
 import { Avatar,Title } from 'react-native-paper';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+import { UserContext } from './UserContext';
 
 function Setting(){
 
    const navigation= useNavigation();
+   const { user } = useContext(UserContext);
+
     return(
         <View style={styles.container}>
             <Avatar.Image source={require("../Image/profile.jpg")} size={100} style={{marginLeft:150,justifyContent:'center'}}/>
             <View style={{flexDirection:'column',marginTop:20}}></View>
-            <Title style={styles.username}>Eddie Fang</Title>
+            <Title style={styles.username}>{user?.username || "Guest"}</Title>
             <TouchableOpacity style={styles.option} onPress={()=>{navigation.navigate('accInfo')}}>
                 <View style={{flexDirection:'row',justifyContent:'space-between'}}>
                 <Text style={styles.optionText}>Account Information</Text>
@@ -46,7 +48,10 @@ const styles=StyleSheet.create({
         fontSize:30,
         color:'black',
         textAlign:'center',
-        marginBottom:50
+        marginBottom:50,
+        fontFamily:"Poppins-SemiBold",
+        paddingVertical:10
+        
     },
 
     option:{

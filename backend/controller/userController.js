@@ -1,6 +1,7 @@
 const db = require('../config/db.config');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
 
 // Register a new user
 exports.registerUser =  (req, res) => {
@@ -82,9 +83,10 @@ exports.addNewCard = (req, res) => {
 // Create a new category
 exports.createCate =  (req, res) => {
     try {
+        const userId = req.session.user.id;
         const { cateName, cateType } = req.body;
-        const query = 'INSERT INTO categories (category_name, category_type) VALUES (?, ?)';
-        db.query(query, [cateName, cateType], (err, result) => {
+        const query = 'INSERT INTO categories (user_id, cateName, cateType) VALUES (?,?, ?)';
+        db.query(query, [userId, cateName, cateType], (err, result) => {
             if (err) return res.status(500).send({ message: 'Error creating category', error: err });
 
             res.status(201).send({ message: 'Category created successfully!' });
@@ -118,11 +120,74 @@ exports.getAllCards = (req, res) => {
 // Fetch all categories
 exports.getAllCategories = async (req, res) => {
     try {
-        const query = 'SELECT * FROM categories';
-        db.query(query, (err, results) => {
+        const userId = req.session.user.id;
+        const query = 'SELECT * FROM categories where user_id = ?';
+        db.query(query, [userId], (err, results) => {
             if (err) {
                 console.error('Error fetching categories:', err);
                 return res.status(500).send({ message: 'Error fetching categories', error: err });
+            }
+
+            res.status(200).send(results);
+        });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).send({ message: 'An error occurred', error: err.message });
+    }
+};
+
+exports.addCardsToCategory = async (req, res) => {
+    try {
+        const { categoryId, cardIds } = req.body;
+
+        console.log('Received categoryId:', categoryId);  // Debugging log
+        console.log('Received cardIds:', cardIds);  // Debugging log
+
+        // Check if cardIds is an array and contains at least one element
+        if (!Array.isArray(cardIds) || cardIds.length === 0) {
+            return res.status(400).send({ message: 'No card IDs provided' });
+        }
+
+        User.addCardsToCategory(categoryId, cardIds, (err, result) => {
+            if (err) {
+                console.error('Error adding cards to category:', err);
+                return res.status(500).send({ message: 'Error adding cards to category', error: err });
+            }
+            res.status(201).send({ message: 'Cards added to category successfully!' });
+        });
+    } catch (err) {
+        console.error('Error in addCardsToCategory:', err);
+        res.status(500).send({ message: 'An error occurred', error: err.message });
+    }
+};
+
+exports.getCardsForCategory = (req, res) => {
+    try {
+        const userId = req.session.user.id;  // Get the user ID from the authenticated user
+        const { categoryId } = req.params;  // Get the category ID from the request parameters
+
+        const query = `
+            SELECT 
+                bc.id, 
+                bc.card_number, 
+                bc.bank_type, 
+                bc.card_type, 
+                bc.expiration_date, 
+                bc.user_id, 
+                cc.category_id
+            FROM 
+                banking_cards bc
+            INNER JOIN 
+                category_cards cc 
+            ON 
+                bc.id = cc.card_id
+            WHERE 
+                cc.category_id = ? AND bc.user_id = ?`;  // Filter by the category ID and user ID
+
+        db.query(query, [categoryId, userId], (err, results) => {
+            if (err) {
+                console.error('Error fetching cards for category:', err);
+                return res.status(500).send({ message: 'Error fetching cards for category', error: err });
             }
 
             res.status(200).send(results);

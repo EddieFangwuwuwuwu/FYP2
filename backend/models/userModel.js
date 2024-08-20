@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../config/db.config');
 
 const User = {
     // Method to create a new user
@@ -30,7 +30,11 @@ const User = {
         const query = 'SELECT * FROM categories';
         db.query(query, callback);
     },
-
+    addCardsToCategory: (categoryId, cardIds, callback) => {
+        const values = cardIds.map(cardId => [categoryId, cardId]);
+        const query = 'INSERT INTO category_cards (category_id, card_id) VALUES ?';
+        db.query(query, [values], callback);
+    },
    
 };
 

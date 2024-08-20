@@ -38,7 +38,7 @@ export const addNewCard = async (cardData) => {
 // Create a new category
 export const createCategory = async (categoryData) => {
     try {
-        const response = await axios.post(`${API_URL}/createCate`, categoryData);
+        const response = await axios.post(`${API_URL}/createCategory`, categoryData);
         return response.data;
     } catch (error) {
         console.error('Error creating category:', error);
@@ -64,6 +64,30 @@ export const fetchCategories = async () => {
         return response.data;
     } catch (error) {
         console.error('Error fetching categories:', error);
+        throw error;
+    }
+};
+
+// Add selected cards to a category
+export const addCardsToCategory = async (categoryId, cardIds) => {
+    try {
+        const response = await axios.post(`${API_URL}/addCardsToCategory`, {
+            categoryId,
+            cardIds
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error adding cards to category:', error);
+        throw error;
+    }
+};
+
+export const fetchCardsForCategory = async (categoryId) => {
+    try {
+        const response = await axios.get(`${API_URL}/cards/category/${categoryId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching cards for category:', error);
         throw error;
     }
 };

@@ -1,25 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Image, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import { loginUser } from './api/api';
+import { UserContext } from './UserContext'; // Import UserContext
 
 function LoginPage() {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { setUser } = useContext(UserContext); // Access setUser from context
 
   const handleLogin = async () => {
     try {
       const response = await loginUser({ email, password });
       if (response.user) {
         const { id, username } = response.user;
-        navigation.navigate('Drawer', {
-          screen: 'DrawerHome',
-          params: {
-            screen: 'BankingCards',
-            params: { userId: id, username },
-          },
+        setUser({ id, username }); // Update the global state with user information
+        console.log('Navigating to Drawer with:', { userId: id, username }); 
+        navigation.reset({
+          index: 0,
+          routes: [{
+            name: 'Drawer',
+            params: {
+              screen: 'DrawerHome',
+              params: {
+                screen: 'BankingCards',
+                params: { userId: id, username },
+              },
+            },
+          }],
         });
       } else {
         Alert.alert('Login failed', 'Invalid credentials');
@@ -28,7 +38,6 @@ function LoginPage() {
       Alert.alert('Login Error', 'Something went wrong. Please try again.');
     }
   };
-  
 
 
   return (

@@ -1,10 +1,9 @@
 import 'react-native-gesture-handler';
 import React, { useState } from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { NavigationContainer, DrawerActions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { NavigationContainer } from '@react-navigation/native';
 import BankingcardsScreen from './components/BankingCards';
 import CategoryScreen from './components/Category';
 import AppGuideScreen from './components/AppGuide';
@@ -16,10 +15,11 @@ import EditExpireDate from './SettingScreen/EditExpireDate';
 import SearchBarAnimation from './components/Search/SearchBarAnimation';
 import LoginPage from './components/LoginPage';
 import SignUpPage from './components/SignUp';
+import CategoryaddCards from './components/CategoryAddCard';
+import { UserProvider } from './components/UserContext'; // Import UserProvider
 
-const StackNav = () => {
+const StackNav = ({ navigation }) => {
   const Stack = createNativeStackNavigator();
-  const navigation = useNavigation();
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -65,6 +65,7 @@ const StackNav = () => {
       <Stack.Screen name="Setting" component={Setting} />
       <Stack.Screen name="accInfo" component={AccInfoScreen} />
       <Stack.Screen name="EditExpireDate" component={EditExpireDate}/>
+      <Stack.Screen name="CategoryaddCards" component={CategoryaddCards} />
     </Stack.Navigator>
   );
 };
@@ -99,9 +100,11 @@ const MainStackNav = () => {
 
 function App() {
   return (
-    <NavigationContainer>
-      <MainStackNav />
-    </NavigationContainer>
+    <UserProvider> 
+      <NavigationContainer> 
+        <MainStackNav />
+      </NavigationContainer>
+    </UserProvider>
   );
 }
 
