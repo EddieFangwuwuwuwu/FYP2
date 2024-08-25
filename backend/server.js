@@ -12,7 +12,7 @@ app.use(cors());
 
 // Configure express-session
 app.use(session({
-    secret: '1234',  // Replace with a strong secret key
+    secret: '1234',  
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }  // Set to true if using HTTPS
@@ -23,6 +23,9 @@ app.use('/api', userRoutes);
 
 const PORT = process.env.PORT || 8082;
 
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+app.use('/uploads', express.static('D:/MobileApplicationTutorial/FYP/Image'));

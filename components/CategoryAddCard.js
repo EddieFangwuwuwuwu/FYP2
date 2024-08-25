@@ -10,31 +10,21 @@ function CategoryaddCards({ route, navigation }) {
     const [selectedCards, setSelectedCards] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryCards, setCategoryCards] = useState([]);
+    const [selectedCard, setSelectedCard] = useState(null);
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
 
     // Fetch cards associated with the selected category
     const loadCategoryCards = async () => {
         try {
             const cards = await fetchCardsForCategory(category.id); // Fetch cards related to the category
-           
-    
-            // Directly assign the fetched cards to categoryCards state
             setCategoryCards(cards);
-    
-            // Since `fetchCardsForCategory` fetches cards already in the category, 
-            // for `availableCards`, you'd need to fetch all cards and exclude those that are already in the category.
             const allCards = await fetchCards(); // Fetch all cards for the user
-            
-    
-            // Filter cards that are not yet associated with the current category
             const notAssociatedCards = allCards.filter(card => !cards.some(c => c.id === card.id));
-            
-    
             setAvailableCards(notAssociatedCards);
         } catch (error) {
             console.error('Failed to load category cards:', error);
         }
     };
-    
 
     useEffect(() => {
         loadCategoryCards(); // Load category cards when the screen is loaded
@@ -53,7 +43,6 @@ function CategoryaddCards({ route, navigation }) {
             console.error('No cards selected to add.');
             return;  // Exit the function early if no cards are selected
         }
-    
         try {
             await addCardsToCategory(category.id, selectedCards);  // Pass category.id and selectedCards correctly
             setModalOpen(false);
@@ -63,13 +52,14 @@ function CategoryaddCards({ route, navigation }) {
             console.error('Failed to add cards to category:', error);
         }
     };
-    
+
     const filteredCards = availableCards.filter(card =>
         card.card_number && card.card_number.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
         <View style={styles.container}>
+
             {categoryCards.length === 0 ? (
                 <Text style={styles.emptyText}>No Cards in this Category</Text>
             ) : (
@@ -77,9 +67,22 @@ function CategoryaddCards({ route, navigation }) {
                     data={categoryCards}  
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
-                        <View style={styles.cardItem}>
-                            <Text style={styles.cardText}>{item.card_number}</Text>
-                        </View>
+                        <TouchableOpacity 
+                            style={styles.cardItem}
+                            onPress={() => {
+                                setSelectedCard(item);
+                                setDetailModalOpen(true);
+                            }}
+                        >
+                            <View style={styles.itemContent}>
+                                <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+                                <View style={styles.textcontainer}>
+                                    <Text style={styles.name}>{item.bank_type}</Text>
+                                    <Text style={styles.subname}>{item.card_number}</Text>
+                                </View>
+                                <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
+                            </View>
+                        </TouchableOpacity>
                     )}
                 />
             )}
@@ -126,6 +129,30 @@ function CategoryaddCards({ route, navigation }) {
                     </View>
                 </View>
             </Modal>
+
+            <Modal
+                visible={detailModalOpen}
+                animationType="slide"
+                transparent={true}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <TouchableOpacity style={styles.closeButton} onPress={() => setDetailModalOpen(false)}>
+                            <Icon name="close" size={45} color="black" />
+                        </TouchableOpacity>
+                        <Icon name="credit-card" size={100} color="#1c2633" />
+                        <Text style={styles.addCardTitle}>Card Details</Text>
+                        {selectedCard && (
+                            <View>
+                                <Text style={styles.label}>Bank Type: {selectedCard.bank_type}</Text>
+                                <Text style={styles.label}>Card Number: {selectedCard.card_number}</Text>
+                                <Text style={styles.label}>Card Type: {selectedCard.card_type}</Text>
+                                <Text style={styles.label}>Expiration Date: {new Date(selectedCard.expiration_date).toDateString()}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -144,20 +171,48 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         justifyContent: 'center', 
         marginTop: '50%', 
-        fontSize: 40 
+        fontSize: 24, // Reduce font size for better presentation
+        fontFamily: 'Poppins-SemiBold',
     },
     cardItem: { 
         flexDirection: 'row', 
-        borderTopLeftRadius:10,
-        borderTopRightRadius:10,
-
-        justifyContent:'space-between',
-        alignItems: 'center', 
-        paddingVertical: 15, 
-        paddingHorizontal:20,
-        borderWidth:1,
-        marginBottom:10,
-        backgroundColor:'#1c2633'
+        width: "100%",
+        height: 60,
+        borderRadius: 100,
+        backgroundColor: '#1c2633',
+        marginVertical: 10,
+        paddingHorizontal: 20,
+        justifyContent: 'space-between',
+        alignItems: 'center', // Ensure items are centered vertically
+    },
+    itemContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    icon: {
+        marginLeft: 20,
+        marginRight: 10
+    },
+    textcontainer: {
+        flexDirection: 'column',
+        flex: 1,
+    },
+    name: {
+        color: 'white',
+        fontSize: 18, // Adjusted size for consistency
+        fontFamily: 'Poppins-SemiBold',
+        paddingLeft: 10
+    },
+    subname: {
+        color: 'white',
+        fontSize: 14, // Adjusted size for consistency
+        fontFamily: 'Poppins-Regular',
+        paddingLeft: 10
+    },
+    iconRight: {
+        position: 'absolute',
+        right: 20,
     },
     cardText: { 
         fontSize: 18,
@@ -180,14 +235,16 @@ const styles = StyleSheet.create({
         flex: 1, 
         backgroundColor: 'rgba(0, 0, 0, 0.5)', 
         justifyContent: 'center', 
-        alignItems: 'center' 
+        alignItems: 'center',
+        paddingHorizontal: 20, // Ensure modal has padding from screen edges
     },
     modalContent: { 
         width: '100%', 
         backgroundColor: '#f7f7f7', 
         borderRadius: 10, 
         padding: 20, 
-        alignItems: 'center' 
+        alignItems: 'center',
+        maxWidth: 400, // Constrain modal width for better layout
     },
     closeButton: { 
         alignSelf: 'flex-end', 
@@ -195,9 +252,12 @@ const styles = StyleSheet.create({
         marginTop: 10 
     },
     addCardTitle: { 
-        fontSize: 24, 
-        fontWeight: 'bold', 
-        marginBottom: 20 
+        fontSize: 20, // Adjusted size for consistency
+        justifyContent: 'center',
+        fontFamily: 'Poppins-SemiBold',
+        marginBottom: 20,
+        color: '#1c2633',
+        textAlign: 'center',
     },
     searchInput: { 
         width: '100%', 
@@ -205,11 +265,12 @@ const styles = StyleSheet.create({
         borderColor: 'gray', 
         borderWidth: 1, 
         borderRadius: 5, 
-        marginBottom: 20 
+        marginBottom: 20,
+        fontFamily: 'Poppins-Regular', // Added font style for consistency
     },
     addButtonText: { 
         color: 'white', 
-        fontSize: 18,
+        fontSize: 16, // Adjusted size for consistency
         fontFamily:'Poppins-Regular'
     },
     addCardButton: {
@@ -220,6 +281,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 20,
-
+        width: '100%', // Ensure button spans full width
+    },
+    label: {
+        fontSize: 16,
+        marginVertical: 5,
+        fontFamily: 'Poppins-Regular',
+        color: '#1c2633',
     },
 });

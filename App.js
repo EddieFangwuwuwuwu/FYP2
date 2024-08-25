@@ -63,9 +63,46 @@ const StackNav = ({ navigation }) => {
       <Stack.Screen name="AppGuide" component={AppGuideScreen} />
       <Stack.Screen name="Sharing" component={SharingScreen} />
       <Stack.Screen name="Setting" component={Setting} />
-      <Stack.Screen name="accInfo" component={AccInfoScreen} />
-      <Stack.Screen name="EditExpireDate" component={EditExpireDate}/>
-      <Stack.Screen name="CategoryaddCards" component={CategoryaddCards} />
+      <Stack.Screen name="Account Information" component={AccInfoScreen} 
+      options={({ navigation }) => ({
+        headerLeft: () => (
+          <Icon.Button 
+            name="arrow-left" 
+            size={30} 
+            backgroundColor="#f5f5f5"
+            color="#1c2633" 
+            onPress={() => navigation.goBack()}
+          />
+        ),
+      })} />
+      <Stack.Screen name="Edit Expiration Date" component={EditExpireDate}
+       options={({ navigation }) => ({
+        headerLeft: () => (
+          <Icon.Button 
+            name="arrow-left" 
+            size={30} 
+            backgroundColor="#f5f5f5"
+            color="#1c2633" 
+            onPress={() => navigation.goBack()}
+          />  ),
+        })}
+        />
+      <Stack.Screen 
+        name="CategoryaddCards" 
+        component={CategoryaddCards}  
+        options={({  route, navigation }) => ({
+          title: route.params?.category?.cateName || 'Add Cards',
+          headerLeft: () => (
+            <Icon.Button 
+              name="arrow-left" 
+              size={30} 
+              backgroundColor="#f5f5f5"
+              color="#1c2633" 
+              onPress={() => navigation.goBack()}
+            />
+          ),
+        })} 
+      />
     </Stack.Navigator>
   );
 };

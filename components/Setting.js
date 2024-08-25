@@ -11,20 +11,24 @@ function Setting(){
 
    const navigation= useNavigation();
    const { user } = useContext(UserContext);
-
+   
     return(
         <View style={styles.container}>
-            <Avatar.Image source={require("../Image/profile.jpg")} size={100} style={{marginLeft:150,justifyContent:'center'}}/>
+            {user?.profilePicture ? (
+                <Avatar.Image source={{ uri: user.profilePicture }} size={100} style={styles.avatar} />
+            ) : (
+                <Avatar.Image source={require("../Image/profile.jpg")} size={100} style={styles.avatar} />
+            )}
             <View style={{flexDirection:'column',marginTop:20}}></View>
             <Title style={styles.username}>{user?.username || "Guest"}</Title>
-            <TouchableOpacity style={styles.option} onPress={()=>{navigation.navigate('accInfo')}}>
+            <TouchableOpacity style={styles.option} onPress={()=>{navigation.navigate('Account Information')}}>
                 <View style={{flexDirection:'row',justifyContent:'space-between'}}>
                 <Text style={styles.optionText}>Account Information</Text>
                 <Icon name="chevron-right" size={45} color="#1c2633" style={styles.iconRight} />
                 </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.option} onPress={()=>{navigation.navigate('EditExpireDate')}}>
+            <TouchableOpacity style={styles.option} onPress={()=>{navigation.navigate('Edit Expiration Date')}}>
             <View style={{flexDirection:'row', justifyContent:'space-between'}}>
                 <Text style={styles.optionText}>Edit Card Expration Date</Text>
                 <Icon name="chevron-right" size={45} color="#1c2633" style={styles.iconRight} />
@@ -39,6 +43,17 @@ function Setting(){
 }
 
 const styles=StyleSheet.create({
+
+    avatar: {
+        borderRadius: 50, // Half the size for circular shape
+        width: 100,  // Match the size you passed to the Avatar.Image
+        height: 100, // Match the size you passed to the Avatar.Image
+        resizeMode: 'cover', // Ensures the image covers the entire area
+        justifyContent:'center',
+        marginLeft:155
+    },
+
+
     container:{
         marginTop:50,
         flex:1,

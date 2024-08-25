@@ -82,6 +82,20 @@ export const addCardsToCategory = async (categoryId, cardIds) => {
     }
 };
 
+// Update profile (including profile picture)
+export const updateProfile = async (formData) => {
+    try {
+        const response = await axios.post(`${API_URL}/updateProfile`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+    }
+};
+
+// Fetch cards for a specific category
 export const fetchCardsForCategory = async (categoryId) => {
     try {
         const response = await axios.get(`${API_URL}/cards/category/${categoryId}`);
@@ -91,3 +105,14 @@ export const fetchCardsForCategory = async (categoryId) => {
         throw error;
     }
 };
+
+export const fetchUserProfile = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/userProfile`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        throw error;
+    }
+};
+

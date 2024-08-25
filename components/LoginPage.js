@@ -2,43 +2,59 @@ import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Image, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
-import { loginUser } from './api/api';
-import { UserContext } from './UserContext'; // Import UserContext
+import { loginUser, fetchUserProfile } from './api/api';
+import { UserContext } from './UserContext';
 
 function LoginPage() {
-  const navigation = useNavigation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { setUser } = useContext(UserContext); // Access setUser from context
+    const navigation = useNavigation();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const { setUser } = useContext(UserContext);
 
-  const handleLogin = async () => {
-    try {
-      const response = await loginUser({ email, password });
-      if (response.user) {
-        const { id, username } = response.user;
-        setUser({ id, username }); // Update the global state with user information
-        console.log('Navigating to Drawer with:', { userId: id, username }); 
-        navigation.reset({
-          index: 0,
-          routes: [{
-            name: 'Drawer',
-            params: {
-              screen: 'DrawerHome',
-              params: {
-                screen: 'BankingCards',
-                params: { userId: id, username },
-              },
-            },
-          }],
-        });
-      } else {
-        Alert.alert('Login failed', 'Invalid credentials');
-      }
-    } catch (error) {
-      Alert.alert('Login Error', 'Something went wrong. Please try again.');
-    }
-  };
+    const handleLogin = async () => {
+        try {
+            const response = await loginUser({ email, password });
+            if (response.user) {
+                const { id, username } = response.user;
 
+                // Now fetch the user profile
+                try {
+                    const userProfile = await fetchUserProfile();
+                    setUser({
+                        id,
+                        username,
+                        profilePicture: userProfile.profile_picture 
+                            ? `http://10.0.2.2:8082${userProfile.profile_picture}`
+                            : null,
+                    });
+
+                    console.log('Navigating to Drawer with:', { userId: id, username });
+
+                    navigation.reset({
+                        index: 0,
+                        routes: [{
+                            name: 'Drawer',
+                            params: {
+                                screen: 'DrawerHome',
+                                params: {
+                                    screen: 'BankingCards',
+                                    params: { userId: id, username },
+                                },
+                            },
+                        }],
+                    });
+                } catch (error) {
+                    console.error('Error fetching user profile after login:', error);
+                    Alert.alert('Profile Error', 'Failed to load user profile.');
+                }
+            } else {
+                Alert.alert('Login failed', 'Invalid credentials');
+            }
+        } catch (error) {
+            console.error('Login Error:', error);
+            Alert.alert('Login Error', 'Something went wrong. Please try again.');
+        }
+    };
 
   return (
     <View style={styles.container}>
@@ -188,8 +204,7 @@ const styles = StyleSheet.create({
   googleText: {
     color: 'black',
     fontSize: 15,
-    fontFamily
-: 'Poppins-Regular',
+    fontFamily: 'Poppins-Regular',
     textAlign: 'center',
     marginTop: 2,
     paddingLeft: 5,

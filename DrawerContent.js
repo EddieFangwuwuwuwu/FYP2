@@ -40,6 +40,7 @@ function DrawerContent(props) {
   const navigation2 = useNavigation();
   const username = props.username || "Guest"; // Get username from props
   const { user } = useContext(UserContext);
+ 
 
   useEffect(() => {
     console.log('Username in DrawerContent:', username);
@@ -78,7 +79,11 @@ function DrawerContent(props) {
                   <TouchableOpacity activeOpacity={0.8}>
                       <View style={styles.userInfoSection}>
                           <View style={{ flexDirection: 'row', marginTop: 10, marginBottom: 15 }}>
-                              <Avatar.Image source={require("./Image/profile.jpg")} size={50} style={{ marginTop: 5 }} />
+                          {user?.profilePicture ? (
+                <Avatar.Image source={{ uri: user.profilePicture }} size={50} style={styles.avatar} />
+            ) : (
+                <Avatar.Image source={require("./Image/profile.jpg")} size={50} style={styles.avatar} />
+            )}
                               <View style={{ marginLeft: 10, flexDirection: 'column' }}>
                                   <Title style={styles.title}>{user?.username || "Guest"}</Title>
                               </View>

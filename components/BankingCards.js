@@ -10,6 +10,7 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const { user } = useContext(UserContext); // Access user from context
   const userId = user?.id;
   const username = user?.username || "Guest";
+  
 
   const [modalOpen, setModalOpen] = useState(false);
   const [cards, setCards] = useState([]);
@@ -65,7 +66,11 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   return (
     <View style={styles.container}>
       <View style={styles.userSection}>
-        <Avatar.Image source={require('../Image/profile.jpg')} size={70} style={styles.userAvatar} />
+      {user?.profilePicture ? (
+                <Avatar.Image source={{ uri: user.profilePicture }} size={100} style={styles.avatar} />
+            ) : (
+                <Avatar.Image source={require("../Image/profile.jpg")} size={70} style={styles.avatar} />
+            )}
         <View style={{ flexDirection: 'column', marginTop: 10, marginLeft: 15 }}>
           <Text style={{ fontSize: 20 }}>Welcome</Text>
           <Text style={styles.userName}>{username || "Guest"}</Text> 
