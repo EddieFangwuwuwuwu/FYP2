@@ -1,114 +1,97 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Image, Text, View, StyleSheet, TextInput, Alert, PermissionsAndroid, TouchableOpacity } from 'react-native';
+import { Image, Text, View, StyleSheet, TextInput, Alert, TouchableOpacity } from 'react-native';
 import { Avatar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/AntDesign';
 import ImagePicker from 'react-native-image-crop-picker';
-import { updateProfile, fetchUserProfile } from '../components/api/api';  // Import both functions from the same place
-import { UserContext } from '../components/UserContext';  // Import UserContext
+import { updateProfileInfo, updateProfilePicture, fetchUserProfile } from '../components/api/api';
+import { UserContext } from '../components/UserContext';
 
 function AccInfoScreen() {
     const [photo, setPhoto] = useState(null);
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { user, setUser } = useContext(UserContext);  // Access user and setUser from context
+    const { user, setUser } = useContext(UserContext);
+
+    const baseURL = 'http://10.0.2.2:8082';
 
     useEffect(() => {
         const loadUserProfile = async () => {
             try {
-                const userData = await fetchUserProfile();  // Fetch user data from the backend
+                const userData = await fetchUserProfile();
+                if (userData.profile_picture) {
+                    const fullUrl = `${baseURL}${userData.profile_picture}`;
+                    setPhoto({ uri: fullUrl });
+                }
                 setUsername(userData.username);
                 setEmail(userData.email);
-                if (userData.profile_picture) {
-                    setPhoto({ uri: `http://10.0.2.2:8082${userData.profile_picture}` });  // Set the profile picture if available
-                }
             } catch (error) {
                 console.error('Error fetching user profile:', error);
             }
         };
 
-        requestStoragePermission();
         loadUserProfile();
     }, []);
-
-    async function requestStoragePermission() {
-        try {
-            const granted = await PermissionsAndroid.request(
-                PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-                {
-                    title: "Storage Permission",
-                    message: "App needs access to your storage to show pictures.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK"
-                }
-            );
-            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                console.log("Storage permission granted");
-            } else {
-                console.log("Storage permission denied");
-            }
-        } catch (err) {
-            console.warn(err);
-        }
-    }
 
     const selectAndCropPhoto = () => {
         ImagePicker.openPicker({
             width: 300,
             height: 300,
             cropping: true,
-            includeBase64: true
-        }).then(image => {
+            includeBase64: true,
+        })
+        .then(image => {
             setPhoto({
                 uri: image.path,
                 type: image.mime,
-                name: image.filename || `cropped_${Date.now()}.jpg`
+                name: image.filename || `cropped_${Date.now()}.jpg`,
             });
-        }).catch(error => {
-            if (error.code === 'E_PICKER_CANCELLED') {
-                console.log('User cancelled image picker');
-            } else {
+        })
+        .catch(error => {
+            if (error.code !== 'E_PICKER_CANCELLED') {
                 console.error('ImagePicker Error: ', error);
             }
         });
     };
 
-    const handleSubmit = async () => {
-        const formData = new FormData();
-        if (photo) {
+    const handleUpdateProfileInfo = async () => {
+        try {
+            const response = await updateProfileInfo({ username, email, password });
+            if (response.message) {
+                Alert.alert('Success', 'Profile info updated successfully');
+                setUser(prevUser => ({ ...prevUser, username, email }));
+            }
+        } catch (error) {
+            console.error('Error updating profile info:', error);
+            Alert.alert('Error', 'Failed to update profile info');
+        }
+    };
+
+    const handleUpdateProfilePicture = async () => {
+        try {
+            const formData = new FormData();
             formData.append('profile_picture', {
                 uri: photo.uri,
                 type: photo.type,
                 name: photo.name,
             });
-        }
-        formData.append('username', username);
-        formData.append('email', email);
-        if (password) {
-            formData.append('password', password);
-        }
 
-        try {
-            const response = await updateProfile(formData);  // Use the updateProfile API function
+            const response = await updateProfilePicture(formData);
             if (response.message) {
-                Alert.alert('Success', 'Profile updated successfully');
-                
-                // Update the user context with the new profile picture
-                setUser((prevUser) => ({
-                    ...prevUser,
-                    profilePicture: response.profile_picture
-                        ? `http://10.0.2.2:8082${response.profile_picture}`
-                        : prevUser.profilePicture,
-                }));
-
-                if (response.profile_picture) {
-                    setPhoto({ uri: `http://10.0.2.2:8082${response.profile_picture}` });  // Update the photo displayed
-                }
+                Alert.alert('Success', 'Profile picture updated successfully');
+                const updatedProfilePictureUrl = `${baseURL}${response.profile_picture}`;
+                setUser(prevUser => ({ ...prevUser, profilePicture: updatedProfilePictureUrl }));
             }
         } catch (error) {
-            console.error('Error updating profile:', error);
-            Alert.alert('Error', 'Failed to update profile');
+            console.error('Error updating profile picture:', error);
+            Alert.alert('Error', 'Failed to update profile picture');
+        }
+    };
+
+    const handleSubmit = async () => {
+        await handleUpdateProfileInfo();
+        if (photo && !photo.uri.startsWith('http')) {
+            await handleUpdateProfilePicture();
         }
     };
 
@@ -242,5 +225,3 @@ const styles = StyleSheet.create({
         fontFamily: "Poppins-SemiBold"
     }
 });
-
-

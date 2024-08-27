@@ -82,15 +82,30 @@ export const addCardsToCategory = async (categoryId, cardIds) => {
     }
 };
 
-// Update profile (including profile picture)
-export const updateProfile = async (formData) => {
+// Update profile info (username, email, password)
+export const updateProfileInfo = async (data) => {
     try {
-        const response = await axios.post(`${API_URL}/updateProfile`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+        const response = await axios.post(`${API_URL}/updateProfileInfo`, data, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 20000,
         });
         return response.data;
     } catch (error) {
-        console.error('Error updating profile:', error);
+        console.error('Error updating profile info:', error);
+        throw error;
+    }
+};
+
+// Update profile picture
+export const updateProfilePicture = async (formData) => {
+    try {
+        const response = await axios.post(`${API_URL}/updateProfilePicture`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 20000,
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating profile picture:', error);
         throw error;
     }
 };
@@ -115,4 +130,3 @@ export const fetchUserProfile = async () => {
         throw error;
     }
 };
-

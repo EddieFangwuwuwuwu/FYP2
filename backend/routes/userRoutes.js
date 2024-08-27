@@ -19,7 +19,8 @@ router.get('/cards', userController.getAllCards);
 router.get('/categories', userController.getAllCategories);
 router.post('/addCardsToCategory', authenticateUser, userController.addCardsToCategory);
 router.get('/cards/category/:categoryId', authenticateUser, userController.getCardsForCategory);
-router.post('/updateProfile', authenticateUser, userController.updateProfile);
+router.post('/updateProfileInfo', authenticateUser, userController.updateProfileInfo);
+router.post('/updateProfilePicture', authenticateUser, userController.updateProfilePicture);
 router.get('/userProfile', authenticateUser, userController.getUserProfile);
 
 

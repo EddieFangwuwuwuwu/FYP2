@@ -2,6 +2,8 @@ const db = require('../config/db.config');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
+const User = require('../models/userModel'); // Adjust the path if necessary
+
 
 // Set up multer storage configuration
 const storage = multer.diskStorage({
@@ -237,27 +239,28 @@ exports.getCardsForCategory = (req, res) => {
     }
 };
 
-// Handle profile picture upload and update user profile
-exports.updateProfile = (req, res) => {
-    console.log('Updating profile for user ID:', req.session.user.id);
-    upload.single('profile_picture')(req, res, async (err) => {
+
+exports.updateProfileInfo = (req, res) => {
+    const userId = req.session.user.id;
+    const { username, email, password } = req.body;
+
+    // First, retrieve the current profile picture
+    const getUserQuery = 'SELECT profile_picture FROM users WHERE id = ?';
+    db.query(getUserQuery, [userId], (err, results) => {
         if (err) {
-            console.error('Error uploading file:', err);
-            return res.status(500).send({ message: 'Error uploading file', error: err });
+            console.error('Error retrieving user info:', err);
+            return res.status(500).send({ message: 'Error retrieving user info', error: err });
         }
 
-        const userId = req.session.user.id;
-        const { username, email, password } = req.body;
-        const profilePicture = req.file ? `/uploads/${req.file.filename}` : null;
-
-        // Validate file type (Optional)
-        if (req.file && !['image/jpeg', 'image/png', 'image/gif', 'image/jpg'].includes(req.file.mimetype)) {
-            console.log('Invalid file type uploaded:', req.file.mimetype);
-            return res.status(400).send({ message: 'Invalid file type. Please upload an image.' });
+        if (results.length === 0) {
+            return res.status(404).send({ message: 'User not found.' });
         }
+
+        const currentProfilePicture = results[0].profile_picture || 'profile.jpg'; // Default to 'profile.jpg' only if it's not set
 
         let query = 'UPDATE users SET ';
         let params = [];
+
         if (username) {
             query += 'username = ?, ';
             params.push(username);
@@ -271,23 +274,53 @@ exports.updateProfile = (req, res) => {
             query += 'password = ?, ';
             params.push(hashedPassword);
         }
-        if (profilePicture) {
-            query += 'profile_picture = ?, ';
-            params.push(profilePicture);
+
+        // Retain the existing profile picture if not being changed
+        query += 'profile_picture = ?, ';
+        params.push(currentProfilePicture);
+
+        if (params.length === 0) {
+            return res.status(400).send({ message: 'No fields provided to update.' });
         }
 
-        // Remove the last comma and space
         query = query.slice(0, -2) + ' WHERE id = ?';
         params.push(userId);
 
         db.query(query, params, (err, result) => {
             if (err) {
-                console.error('Error updating profile:', err);
-                return res.status(500).send({ message: 'Error updating profile', error: err });
+                console.error('Error updating profile info:', err);
+                return res.status(500).send({ message: 'Error updating profile info', error: err });
             }
 
-            console.log('Profile updated successfully for user ID:', userId);
-            res.status(200).send({ message: 'Profile updated successfully', profile_picture: profilePicture });
+            // Update the session with the new info
+            if (username) req.session.user.username = username;
+            if (email) req.session.user.email = email;
+            req.session.user.profile_picture = currentProfilePicture; // Ensure session keeps the correct profile picture
+
+            res.status(200).send({ message: 'Profile info updated successfully' });
+        });
+    });
+};
+
+// userController.js
+
+exports.updateProfilePicture = (req, res) => {
+    upload.single('profile_picture')(req, res, (err) => {
+        if (err) {
+            console.error('Error uploading file:', err);
+            return res.status(500).send({ message: 'Error uploading file', error: err });
+        }
+
+        const userId = req.session.user.id;
+        const profilePicture = `/uploads/${req.file.filename}`;
+
+        User.updateProfilePicture(userId, profilePicture, (err, result) => {
+            if (err) {
+                console.error('Error updating profile picture:', err);
+                return res.status(500).send({ message: 'Error updating profile picture', error: err });
+            }
+
+            res.status(200).send({ message: 'Profile picture updated successfully', profile_picture: profilePicture });
         });
     });
 };

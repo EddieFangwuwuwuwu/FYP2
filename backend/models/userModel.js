@@ -38,9 +38,9 @@ const User = {
         db.query(query, [values], callback);
     },
 
-    // Method to update the user's profile (including profile picture)
-    updateProfile: (userId, updateData, callback) => {
-        const { username, email, password, profilePicturePath } = updateData;
+    // Method to update the user's profile info (username, email, password)
+    updateProfileInfo: (userId, updateData, callback) => {
+        const { username, email, password } = updateData;
         
         let query = 'UPDATE users SET ';
         let params = [];
@@ -57,16 +57,18 @@ const User = {
             query += 'password = ?, ';
             params.push(password);
         }
-        if (profilePicturePath) {
-            query += 'profile_picture = ?, ';
-            params.push(profilePicturePath);
-        }
 
         // Remove trailing comma and space
         query = query.slice(0, -2) + ' WHERE id = ?';
         params.push(userId);
 
         db.query(query, params, callback);
+    },
+
+    // Method to update the user's profile picture
+    updateProfilePicture: (userId, profilePicturePath, callback) => {
+        const query = 'UPDATE users SET profile_picture = ? WHERE id = ?';
+        db.query(query, [profilePicturePath, userId], callback);
     },
 
     getUserProfile: (userId, callback) => {

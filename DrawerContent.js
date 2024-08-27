@@ -17,7 +17,7 @@ const DrawerItemComponent = ({ icon, label, navigateTo }) => {
     const navigation = useNavigation();
     return (
         <DrawerItem 
-            icon={({ color, size }) => <Icon name={icon} color="#1c1c1c" size={size} />}
+            icon={({ color, size }) => <Icon name={icon} color="#1c2633" size={size} />}
             labelStyle={{ color: "#1c1c1c", fontSize: 14, fontFamily: "Poppins-Medium" }}
             label={label}
             onPress={() => { navigation.navigate(navigateTo); }}

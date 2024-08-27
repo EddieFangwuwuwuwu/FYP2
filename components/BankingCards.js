@@ -4,7 +4,8 @@ import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList } from 'react
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
 import { fetchCards } from './api/api';  
-import { UserContext } from './UserContext'; // Import UserContext
+import { UserContext } from './UserContext'; 
+import ImageModal from './profileImage/ImageModal';
 
 function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const { user } = useContext(UserContext); // Access user from context
@@ -16,6 +17,7 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const [cards, setCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
   
   // Fetch cards from the API
   const loadCards = async () => {
@@ -63,14 +65,25 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
     card.bank_type && card.bank_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleAvatarPress = () => {
+    setModalVisible(true);
+};
+
+const handleCloseModal = () => {
+    setModalVisible(false);
+};
+
+
   return (
     <View style={styles.container}>
       <View style={styles.userSection}>
-      {user?.profilePicture ? (
-                <Avatar.Image source={{ uri: user.profilePicture }} size={100} style={styles.avatar} />
-            ) : (
-                <Avatar.Image source={require("../Image/profile.jpg")} size={70} style={styles.avatar} />
-            )}
+      <TouchableOpacity onPress={handleAvatarPress}>
+                {user?.profilePicture ? (
+                    <Avatar.Image source={{ uri: user.profilePicture }} size={100} style={styles.avatar} />
+                ) : (
+                    <Avatar.Image source={require("../Image/profile.jpg")} size={100} style={styles.avatar} />
+                )}
+            </TouchableOpacity>
         <View style={{ flexDirection: 'column', marginTop: 10, marginLeft: 15 }}>
           <Text style={{ fontSize: 20 }}>Welcome</Text>
           <Text style={styles.userName}>{username || "Guest"}</Text> 
@@ -169,6 +182,13 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
           </View>
         </View>
       </Modal>
+
+      <ImageModal 
+                visible={isModalVisible} 
+                onClose={handleCloseModal} 
+                imageUri={user?.profilePicture || '../Image/profile.jpg'} 
+            />
+
     </View>
   );
 }
