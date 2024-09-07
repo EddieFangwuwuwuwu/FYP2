@@ -1,12 +1,14 @@
-import React, { useEffect,useContext } from "react";
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useContext, useState } from "react";
+import { View, Text, StyleSheet, Alert, Image } from 'react-native';
 import { Avatar, Title } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { TouchableOpacity } from "react-native-gesture-handler";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import { UserContext } from './components/UserContext';
-const DrawerList= [
+import ImageModal from "./components/profileImage/ImageModal"; // Import ImageModal
+
+const DrawerList = [
     { icon: 'credit-card', label: 'Banking Cards', navigateTo: 'BankingCards' },
     { icon: 'folder', label: 'Category', navigateTo: 'Category' },
     { icon: 'users', label: 'Sharing', navigateTo: 'Sharing' },
@@ -38,13 +40,16 @@ const DrawerItems = () => {
 
 function DrawerContent(props) {
   const navigation2 = useNavigation();
-  const username = props.username || "Guest"; // Get username from props
   const { user } = useContext(UserContext);
- 
+  const [isModalVisible, setModalVisible] = useState(false);
 
-  useEffect(() => {
-    console.log('Username in DrawerContent:', username);
-  }, [username]);
+  const handleAvatarPress = () => {
+      setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+      setModalVisible(false);
+  };
 
   const handleSignOut = () => {
       // Show confirmation alert before signing out
@@ -76,14 +81,18 @@ function DrawerContent(props) {
       <View style={styles.drawerContent}>
           <DrawerContentScrollView {...props}>
               <View style={styles.drawerContent}>
-                  <TouchableOpacity activeOpacity={0.8}>
+                  <TouchableOpacity activeOpacity={0.8} onPress={handleAvatarPress}>
                       <View style={styles.userInfoSection}>
                           <View style={{ flexDirection: 'row', marginTop: 10, marginBottom: 15 }}>
-                          {user?.profilePicture ? (
-                <Avatar.Image source={{ uri: user.profilePicture }} size={50} style={styles.avatar} />
-            ) : (
-                <Avatar.Image source={require("./Image/profile.jpg")} size={50} style={styles.avatar} />
-            )}
+                              {user?.profilePicture ? (
+    <TouchableOpacity onPress={handleAvatarPress}>
+        <Avatar.Image source={{ uri: user.profilePicture }} size={50} style={styles.avatar} />
+    </TouchableOpacity>
+) : (
+    <TouchableOpacity onPress={handleAvatarPress}>
+        <Avatar.Image source={require("./Image/profile.jpg")} size={50} style={styles.avatar} />
+    </TouchableOpacity>
+)}
                               <View style={{ marginLeft: 10, flexDirection: 'column' }}>
                                   <Title style={styles.title}>{user?.username || "Guest"}</Title>
                               </View>
@@ -111,6 +120,13 @@ function DrawerContent(props) {
               label="Sign Out" 
               onPress={handleSignOut}
           />
+
+<ImageModal
+    visible={isModalVisible}
+    onClose={handleCloseModal}
+    imageUri={user?.profilePicture ? user.profilePicture : Image.resolveAssetSource(require('./Image/profile.jpg')).uri}
+/>
+
       </View>
   );
 }
@@ -134,6 +150,9 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 14,
         width: '100%',
+    },
+    avatar: {
+        borderRadius: 25, // Half the size of the Avatar.Image to make it circular
     },
 });
 

@@ -71,8 +71,91 @@ const User = {
         db.query(query, [profilePicturePath, userId], callback);
     },
 
+    // Method to fetch a user profile
     getUserProfile: (userId, callback) => {
         const query = 'SELECT username, email, profile_picture FROM users WHERE id = ?';
+        db.query(query, [userId], callback);
+    },
+
+    // Method to fetch all users except the current user
+    getAllUsersExceptCurrent: (userId, callback) => {
+        const query = 'SELECT id, username FROM users WHERE id != ?';
+        db.query(query, [userId], callback);
+    },
+
+    // Method to get shared cards for a user
+    getSharedCardsForUser: (userId, callback) => {
+        const query = `
+            SELECT bc.id, bc.card_number, bc.bank_type, bc.card_type, bc.expiration_date 
+            FROM banking_cards bc
+            INNER JOIN shared_cards sc ON bc.id = sc.card_id
+            WHERE sc.user_id = ?`;
+        db.query(query, [userId], callback);
+    },
+
+    // Method to create a pending share record with TOTP secret
+    createPendingShare: (cardId, recipientId, secret, callback) => {
+        const query = `
+            INSERT INTO pending_shares (card_id, recipient_id, secret)
+            VALUES (?, ?, ?)`;
+        db.query(query, [cardId, recipientId, secret], callback);
+    },
+
+    // Method to retrieve a pending share by card ID and recipient ID
+    getPendingShare: (cardId, recipientId, callback) => {
+        const query = `
+            SELECT * FROM pending_shares
+            WHERE card_id = ? AND recipient_id = ?`;
+        db.query(query, [cardId, recipientId], callback);
+    },
+
+    // Method to delete a pending share by card ID and recipient ID
+    deletePendingShare: (cardId, recipientId, callback) => {
+        const query = `
+            DELETE FROM pending_shares
+            WHERE card_id = ? AND recipient_id = ?`;
+        db.query(query, [cardId, recipientId], callback);
+    },
+
+    // Method to share a card with a user
+    shareCardWithUser: (cardId, recipientId, callback) => {
+        const query = 'INSERT INTO shared_cards (card_id, user_id) VALUES (?, ?)';
+        db.query(query, [cardId, recipientId], callback);
+    },
+
+    // Method to get verified users with their shared cards
+    getVerifiedUsers: (callback) => {
+        const query = `
+            SELECT u.id, u.username, u.email,
+                   GROUP_CONCAT(bc.card_number SEPARATOR ', ') AS sharedCards
+            FROM users u
+            INNER JOIN shared_cards sc ON u.id = sc.user_id
+            INNER JOIN banking_cards bc ON sc.card_id = bc.id
+            GROUP BY u.id, u.username, u.email
+        `;
+
+        db.query(query, (err, results) => {
+            if (err) {
+                return callback(err, null);
+            }
+            if (results.length === 0) {
+                return callback(null, []);
+            }
+            return callback(null, results);
+        });
+    },
+
+    // Method to fetch pending shared cards for a user
+    getPendingSharedCards: (userId, callback) => {
+        const query = `
+            SELECT c.*
+            FROM banking_cards c
+            WHERE c.id IN (
+                SELECT ps.card_id
+                FROM pending_shares ps
+                WHERE ps.recipient_id = ?
+            );
+        `;
         db.query(query, [userId], callback);
     },
 };
