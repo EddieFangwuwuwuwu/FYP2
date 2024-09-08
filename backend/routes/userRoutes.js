@@ -33,5 +33,7 @@ router.post('/addCardsToCategory', authenticateUser, userController.addCardsToCa
 router.get('/cards/category/:categoryId', authenticateUser, userController.getCardsForCategory);
 router.get('/fetchPendingSharedCards', authenticateUser, userController.fetchPendingSharedCards);
 router.get('/getVerifiedSharedCards/:userId', authenticateUser, userController.getVerifiedSharedCards);
+router.get('/getUsersWithSharedCards/:userId', authenticateUser, userController.getUsersWithSharedCards);
+
 
 module.exports = router;

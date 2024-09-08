@@ -306,7 +306,12 @@ exports.getAllUsers = (req, res) => {
 
 
 exports.generateTOTP = (req, res) => {
-    const { cardId, recipientId } = req.body;
+    const { cardId, recipientId, senderId } = req.body;
+
+    // Add logging to check the data coming from frontend
+    console.log("Generating TOTP with the following data:", {
+        cardId, recipientId, senderId
+    });
 
     const secret = speakeasy.generateSecret({ length: 20 });
 
@@ -319,16 +324,24 @@ exports.generateTOTP = (req, res) => {
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
     const query = `
-        INSERT INTO pending_shares (card_id, recipient_id, secret, expires_at)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO pending_shares (card_id, recipient_id, sender_id, secret, expires_at)
+        VALUES (?, ?, ?, ?, ?)
     `;
-    db.query(query, [cardId, recipientId, secret.base32, expiresAt], (err, result) => {
+
+    // Log before inserting into DB
+    console.log("Inserting into pending_shares with values:", {
+        cardId, recipientId, senderId, secret: secret.base32, expiresAt
+    });
+
+    db.query(query, [cardId, recipientId, senderId, secret.base32, expiresAt], (err, result) => {
         if (err) {
+            console.error('Error inserting into pending_shares:', err);
             return res.status(500).send({ message: 'Error storing pending share', error: err });
         }
         res.status(200).send({ token, secret: secret.base32 });
     });
 };
+
 
 
 
@@ -369,34 +382,36 @@ exports.checkPendingVerification = (req, res) => {
 
 
 exports.verifyTOTP = (req, res) => {
-    const { cardId, recipientId, token } = req.body;
+    const { cardId, recipientId, token } = req.body;  // Removed senderId from frontend
 
-    console.log(`Verifying TOTP for cardId: ${cardId}, recipientId: ${recipientId}, token: ${token}`);
+    console.log(`[TOTP Verification] Received data: cardId: ${cardId}, recipientId: ${recipientId}, token: ${token}`);
 
-    // Fetch the stored TOTP secret and expiration time
+    // Fetch the stored TOTP secret and expiration time from pending_shares
     const query = `
         SELECT * FROM pending_shares
         WHERE card_id = ? AND recipient_id = ?
         ORDER BY created_at DESC
         LIMIT 1
     `;
+    console.log(`[TOTP Verification] Fetching pending shares for cardId: ${cardId} and recipientId: ${recipientId}`);
+    
     db.query(query, [cardId, recipientId], (err, results) => {
         if (err) {
-            console.error('Error retrieving pending verification:', err);
+            console.error(`[TOTP Verification] Error retrieving pending verification for cardId: ${cardId} and recipientId: ${recipientId}:`, err);
             return res.status(500).send({ message: 'Error retrieving pending verification', error: err });
         }
 
         if (results.length === 0) {
-            console.log('Pending verification not found.');
+            console.log(`[TOTP Verification] No pending verification found for cardId: ${cardId} and recipientId: ${recipientId}`);
             return res.status(404).send({ message: 'Pending verification not found' });
         }
 
-        const { secret, expires_at } = results[0];
-        console.log(`Retrieved pending verification. Secret: ${secret}, Expires At: ${expires_at}`);
+        const { secret, expires_at, sender_id } = results[0];  // Fetch the senderId from the DB
+        console.log(`[TOTP Verification] Retrieved pending verification. Secret: ${secret}, Expires At: ${expires_at}, SenderId: ${sender_id}`);
 
         // Check if the TOTP has expired
         if (new Date() > new Date(expires_at)) {
-            console.log('TOTP code has expired.');
+            console.log(`[TOTP Verification] TOTP code has expired for cardId: ${cardId} and recipientId: ${recipientId}`);
             return res.status(400).send({ message: 'TOTP code has expired' });
         }
 
@@ -408,56 +423,64 @@ exports.verifyTOTP = (req, res) => {
             step: 300
         });
 
-        console.log(`TOTP verification result: ${isValid}`);
-
-        // If the TOTP is invalid, stop the process and return an error
         if (!isValid) {
-            console.log('Invalid TOTP code provided.');
+            console.log(`[TOTP Verification] Invalid TOTP code provided for cardId: ${cardId} and recipientId: ${recipientId}`);
             return res.status(401).send({ message: 'Invalid TOTP code' });
         }
 
-        console.log('TOTP verified successfully. Proceeding to delete pending share and insert/update shared card.');
+        console.log(`[TOTP Verification] TOTP verified successfully for cardId: ${cardId} and recipientId: ${recipientId}`);
 
         // TOTP is valid, now delete the pending share record
         const deleteQuery = 'DELETE FROM pending_shares WHERE card_id = ? AND recipient_id = ?';
+        console.log(`[TOTP Verification] Deleting pending share for cardId: ${cardId} and recipientId: ${recipientId}`);
+        
         db.query(deleteQuery, [cardId, recipientId], (err, result) => {
             if (err) {
-                console.error('Error deleting pending share:', err);
+                console.error(`[TOTP Verification] Error deleting pending share for cardId: ${cardId} and recipientId: ${recipientId}:`, err);
                 return res.status(500).send({ message: 'Error deleting pending share', error: err });
             }
 
-            console.log('Pending share deleted successfully.');
+            console.log(`[TOTP Verification] Pending share deleted successfully for cardId: ${cardId} and recipientId: ${recipientId}`);
 
-            // After successful deletion, check if the card is already shared (update if exists) or insert a new shared card with is_verified = 1
-            const checkSharedCardQuery = 'SELECT * FROM shared_cards WHERE card_id = ? AND user_id = ?';
+            // After deletion, check if the card is already shared (update if exists) or insert a new shared card with is_verified = 1
+            const checkSharedCardQuery = 'SELECT * FROM shared_cards WHERE card_id = ? AND recipient_id = ?';
+            console.log(`[TOTP Verification] Checking if card is already shared for cardId: ${cardId} and recipientId: ${recipientId}`);
+
             db.query(checkSharedCardQuery, [cardId, recipientId], (err, sharedResults) => {
                 if (err) {
-                    console.error('Error checking shared card:', err);
+                    console.error(`[TOTP Verification] Error checking shared card for cardId: ${cardId} and recipientId: ${recipientId}:`, err);
                     return res.status(500).send({ message: 'Error checking shared card', error: err });
                 }
 
                 if (sharedResults.length > 0) {
                     // If the shared card exists, update is_verified to 1
-                    const updateQuery = 'UPDATE shared_cards SET is_verified = 1 WHERE card_id = ? AND user_id = ?';
+                    console.log(`[TOTP Verification] Shared card already exists for cardId: ${cardId} and recipientId: ${recipientId}. Updating verification status.`);
+                    
+                    const updateQuery = 'UPDATE shared_cards SET is_verified = 1 WHERE card_id = ? AND recipient_id = ?';
                     db.query(updateQuery, [cardId, recipientId], (err, result) => {
                         if (err) {
-                            console.error('Error updating shared card verification status:', err);
+                            console.error(`[TOTP Verification] Error updating shared card verification status for cardId: ${cardId} and recipientId: ${recipientId}:`, err);
                             return res.status(500).send({ message: 'Error updating shared card verification status', error: err });
                         }
 
-                        console.log('Shared card verified successfully.');
+                        console.log(`[TOTP Verification] Shared card verified successfully for cardId: ${cardId} and recipientId: ${recipientId}`);
                         res.status(201).send({ success: true, message: 'Card verification completed successfully!' });
                     });
                 } else {
                     // If the shared card does not exist, insert it with is_verified = 1
-                    const insertQuery = 'INSERT INTO shared_cards (card_id, user_id, is_verified) VALUES (?, ?, 1)';
-                    db.query(insertQuery, [cardId, recipientId], (err, result) => {
+                    console.log(`[TOTP Verification] Shared card does not exist for cardId: ${cardId} and recipientId: ${recipientId}. Inserting new record.`);
+                    
+                    const insertQuery = `
+                    INSERT INTO shared_cards (card_id, user_id, sender_id, recipient_id, is_verified) 
+                    VALUES (?, ?, ?, ?, 1)
+                    `;
+                    // Use sender_id from the pending_shares result instead of senderId passed from the frontend
+                    db.query(insertQuery, [cardId, recipientId, sender_id, recipientId], (err, result) => {
                         if (err) {
-                            console.error('Error sharing card:', err);
+                            console.error(`[TOTP Verification] Error inserting shared card for cardId: ${cardId}, senderId: ${sender_id}, recipientId: ${recipientId}:`, err);
                             return res.status(500).send({ message: 'Error sharing card', error: err });
                         }
-
-                        console.log('Card shared and verified successfully.');
+                        console.log(`[TOTP Verification] Card shared and verified successfully for cardId: ${cardId}, senderId: ${sender_id}, recipientId: ${recipientId}`);
                         res.status(201).send({ success: true, message: 'Card shared successfully and pending verification removed!' });
                     });
                 }
@@ -509,16 +532,15 @@ exports.fetchPendingSharedCards = (req, res) => {
 };
 
 exports.getVerifiedSharedCards = (req, res) => {
-    const recipientId = req.params.userId;  // Get the user ID from the request params
+    const recipientId = req.params.userId;  // Get the user ID from the request params (the recipient)
 
     const query = `
-    SELECT sc.id, sc.card_id, sc.user_id, sc.shared_at, sc.is_verified, 
+    SELECT sc.id, sc.card_id, sc.sender_id, sc.shared_at, sc.is_verified, 
            bc.bank_type, bc.card_number, bc.expiration_date
     FROM shared_cards sc
     JOIN banking_cards bc ON sc.card_id = bc.id
-    WHERE sc.user_id = ? AND sc.is_verified = 1
-`;
-
+    WHERE sc.recipient_id = ? AND sc.is_verified = 1
+    `;
 
     db.query(query, [recipientId], (err, results) => {
         if (err) {
@@ -530,3 +552,23 @@ exports.getVerifiedSharedCards = (req, res) => {
     });
 };
 
+// userController.js
+exports.getUsersWithSharedCards = (req, res) => {
+    const senderId = req.params.userId; // Get the sender's user ID from the request params
+    
+    const query = `
+        SELECT u.id, u.username, u.email, u.profile_picture, sc.card_id, bc.bank_type, bc.card_number, bc.expiration_date
+        FROM users u
+        JOIN shared_cards sc ON u.id = sc.recipient_id  -- Fetch users who received cards from the sender
+        JOIN banking_cards bc ON sc.card_id = bc.id
+        WHERE sc.sender_id = ? AND sc.is_verified = 1  -- sc.sender_id is the user who shared the card
+    `;
+    
+    db.query(query, [senderId], (err, results) => {
+        if (err) {
+            console.error('Error fetching users with shared cards:', err);
+            return res.status(500).send({ message: 'Error fetching shared users' });
+        }
+        res.status(200).send(results);
+    });
+};

@@ -12,7 +12,7 @@ export const UserProvider = ({ children }) => {
             const userData = await fetchUserProfile();
             if (userData) {
                 setUser(userData);
-            }
+            }   
         } catch (error) {
             console.error('Failed to fetch user data:', error);
         }
@@ -34,14 +34,6 @@ export const UserProvider = ({ children }) => {
         }
     };
 
-    // Fetch user profile if a token exists when the component mounts
-    useEffect(() => {
-        const token = getAuthToken(); // Replace with your method of retrieving the token
-        if (token) {
-            loadUserData();
-        }
-    }, []);
-
     return (
         <UserContext.Provider value={{ user, setUser, handleLogin }}>
             {children}
@@ -49,13 +41,3 @@ export const UserProvider = ({ children }) => {
     );
 };
 
-// Helper function to retrieve the auth token (e.g., from secure storage, state, etc.)
-const getAuthToken = () => {
-    // Implement logic to retrieve stored token
-    return null; // Placeholder - return the actual token if it exists
-};
-
-// Helper function to set the auth token (e.g., after login)
-const setAuthToken = (token) => {
-    // Implement logic to store the token securely
-};

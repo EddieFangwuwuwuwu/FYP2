@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList, TextInput } from 'react-native';
+import React, { useState, useEffect,useContext } from 'react';
+import { UserContext } from './UserContext'; 
+import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList, TextInput, Alert} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { fetchAllUsers, fetchCards, generateTOTP, fetchVerifiedUsers } from './api/api';
+import { fetchAllUsers, fetchCards, generateTOTP,fetchUsersWithSharedCards } from './api/api';
 
 function SharingScreen() {
     const [modalOpen, setModalOpen] = useState(false);
@@ -13,24 +14,34 @@ function SharingScreen() {
     const [selectedCards, setSelectedCards] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [TOTP, setTOTP] = useState(''); 
-    const [verifiedUsers, setVerifiedUsers] = useState([]);
     const [selectedUserDetails, setSelectedUserDetails] = useState(null);
     const [userModalOpen, setUserModalOpen] = useState(false);
     const [remainingTime, setRemainingTime] = useState(300); // Initial time is 5 minutes (300 seconds)
+    const [usersWithSharedCards, setUsersWithSharedCards] = useState([]);  // To store the users with shared cards
+    const { user } = useContext(UserContext);
+    const userId = user?.id;
 
     useEffect(() => {
-        const fetchVerifiedUsersData = async () => {
+        const loadUsersWithCards = async () => {
+            if (!userId) {
+                console.error('userId is undefined or null');
+                return;
+            }
             try {
-                const verifiedUsers = await fetchVerifiedUsers();
-                setVerifiedUsers(verifiedUsers);
+                // Fetch users that the logged-in user (Kathy) has shared cards with.
+                const fetchedUsersWithSharedCards = await fetchUsersWithSharedCards(userId, 'sender'); // Pass 'sender' or an equivalent parameter to fetch based on senderId
+                
+                console.log('Fetched Users with Shared Cards:', fetchedUsersWithSharedCards);  // Log the fetched data
+                setUsersWithSharedCards(fetchedUsersWithSharedCards);  // Set the users in state
             } catch (error) {
-                console.error('Error handling in fetchVerifiedUsersData:', error);
+                console.error('Error fetching users with shared cards:', error);
             }
         };
-
-        fetchVerifiedUsersData();
-    }, []);
-
+        
+        loadUsersWithCards();
+    }, [userId]);
+    
+    
     useEffect(() => {
         if (modalOpen) {
             fetchUsers();
@@ -86,7 +97,19 @@ function SharingScreen() {
 
     const handleGenerateTOTP = async () => {
         try {
-            const data = await generateTOTP(selectedCards[0], selectedUsers[0]);
+            if (selectedUsers.length === 0 || selectedCards.length === 0) {
+                console.error('No users or cards selected to share.');
+                return;
+            }
+    
+            const recipientId = selectedUsers[0];  // The user Kathy is sharing the card with
+            const cardId = selectedCards[0];  // The card Kathy is sharing
+            const senderId = user?.id;  // Kathy’s ID
+            
+            // Pass both sender and recipient correctly to the backend
+            const data = await generateTOTP(cardId, recipientId, senderId);
+            console.log("Generated TOTP for sharing card. RecipientId:", recipientId, "SenderId:", senderId);
+    
             setTOTP(data.token); 
             setTotpModalOpen(true); 
             startCountdown(); // Start the countdown when TOTP is generated
@@ -94,23 +117,50 @@ function SharingScreen() {
             console.error('Error generating TOTP:', error);
         }
     };
+    
 
     const handleShare = async () => {
         if (selectedUsers.length === 0 || selectedCards.length === 0) {
             console.error('No users or cards selected to share.');
+            Alert.alert('Error', 'Please select both a user and a card to share.');
             return;
         }
+    
         try {
-            await handleGenerateTOTP(); 
+            // Assuming 'user' contains the logged-in user's (Kathy's) information
+            const senderId = user?.id;  // Kathy's ID as the sender
+            const recipientId = selectedUsers[0];  // The first selected user (the recipient)
+    
+            // Ensure we have both senderId (Kathy) and recipientId (the selected user)
+            if (!senderId || !recipientId) {
+                console.error('Missing senderId or recipientId.');
+                Alert.alert('Error', 'Unable to share card due to missing user information.');
+                return;
+            }
+    
+            console.log('Sharing card with the following details:');
+            console.log('Sender (Kathy) ID:', senderId);
+            console.log('Recipient ID:', recipientId);
+            console.log('Card ID:', selectedCards[0]);
+    
+            // Call the handleGenerateTOTP function to generate a TOTP for sharing
+            await handleGenerateTOTP(selectedCards[0], senderId, recipientId); 
+    
+            // If successful, close modals and reset state
             setModalOpen(false);
             setCardModalOpen(false);
             setSelectedUsers([]);
             setSelectedCards([]);
+    
+            // Show a success message
+            Alert.alert('Success', 'Card sharing initiated successfully!');
+    
         } catch (error) {
             console.error('Error sharing card:', error);
+            Alert.alert('Error', 'Failed to share card. Please try again.');
         }
     };
-
+    
     const handleUserSelection = (user) => {
         setSelectedUserDetails(user);
         setUserModalOpen(true);
@@ -121,10 +171,10 @@ function SharingScreen() {
     return (
         <View style={styles.container}>
             <Text style={styles.emptyText}>
-                {verifiedUsers.length === 0 ? 'No users to share cards with yet.' : 'Verified Users'}
+                {usersWithSharedCards.length === 0 ? 'No users to share cards with yet.' : 'Verified Users'}
             </Text>
             <FlatList
-                data={verifiedUsers}
+                data={usersWithSharedCards}  // Display the users with shared cards
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                     <TouchableOpacity onPress={() => handleUserSelection(item)} style={styles.cardItem}>
@@ -134,6 +184,9 @@ function SharingScreen() {
                     </TouchableOpacity>
                 )}
             />
+
+
+
 
             <Text style={styles.emptyText}>Select a user to share with</Text>
             <TouchableOpacity style={styles.addButton} onPress={() => setModalOpen(true)}>
@@ -212,7 +265,7 @@ function SharingScreen() {
                         <Icon name="lock" size={100} color="#1c2633" />
                         <Text style={styles.totpTitle}>Generated TOTP Code:</Text>
                         <Text style={styles.totpCode}>{TOTP}</Text>
-                        {/* Countdown Timer */}
+                        
                         <Text style={styles.countdownText}>
                             Code expires in: {Math.floor(remainingTime / 60)}:{('0' + (remainingTime % 60)).slice(-2)}
                         </Text>
@@ -221,24 +274,33 @@ function SharingScreen() {
             </Modal>
 
             <Modal visible={userModalOpen} animationType="slide" transparent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setUserModalOpen(false)}>
-                            <Icon name="close" size={45} color="black" />
-                        </TouchableOpacity>
-                        <Icon name="user" size={100} color="#1c2633" />
-                        <Text style={styles.addUserTitle}>User Details</Text>
-                        {selectedUserDetails && (
-                            <View>
-                                <Text style={styles.label}>Username: {selectedUserDetails.username}</Text>
-                                <Text style={styles.label}>Email: {selectedUserDetails.email}</Text>
-                                <Text style={styles.label}>Shared Cards:</Text>
-                                <Text style={styles.sharedCards}>{selectedUserDetails.sharedCards}</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-            </Modal>
+  <View style={styles.modalOverlay}>
+    <View style={styles.userModalContent}>
+      <TouchableOpacity style={styles.closeButton} onPress={() => setUserModalOpen(false)}>
+        <Icon name="close" size={45} color="black" />
+      </TouchableOpacity>
+      <Icon name="user" size={100} color="#1c2633" />
+      <Text style={styles.addUserTitle}>User Details</Text>
+      {selectedUserDetails && (
+        <View style={styles.userDetailsContainer}>
+          <Text style={styles.label}>Username: {selectedUserDetails.username}</Text>
+          <Text style={styles.label}>Email: {selectedUserDetails.email}</Text>
+          <Text style={styles.label}>Shared Cards:</Text>
+          <FlatList
+            data={selectedUserDetails.sharedCards}
+            keyExtractor={(item) => item.card_id.toString()}
+            renderItem={({ item }) => (
+              <Text style={styles.sharedCards}>
+                {item.bank_type} - {item.card_number}
+              </Text>
+            )}
+          />
+        </View>
+      )}
+    </View>
+  </View>
+</Modal>
+
         </View>
     );
 }
@@ -379,4 +441,21 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins-Regular',
         color: 'grey',
     },
+    
+    userDetailsContainer: {
+        flex: 1,
+        width: '100%',
+        maxHeight: '60%', // Allow the content to be scrollable if it exceeds 60% height
+      },
+
+      userModalContent: {
+        width: '100%',
+        maxHeight: '70%',  // Limit the modal height to 70% of the screen
+        backgroundColor: '#f7f7f7',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+        maxWidth: 400,
+        justifyContent: 'center',
+      },
 });

@@ -89,17 +89,19 @@ const User = {
             SELECT bc.id, bc.card_number, bc.bank_type, bc.card_type, bc.expiration_date 
             FROM banking_cards bc
             INNER JOIN shared_cards sc ON bc.id = sc.card_id
-            WHERE sc.user_id = ?`;
+            WHERE sc.recipient_id = ?`;
         db.query(query, [userId], callback);
     },
+    
+    
+    // Method to create a pending share record with TOTP secret and expiration time
+createPendingShare: (cardId, recipientId, senderId, secret, expiresAt, callback) => {
+    const query = `
+        INSERT INTO pending_shares (card_id, recipient_id, sender_id, secret, expires_at)
+        VALUES (?, ?, ?, ?, ?)`;
+    db.query(query, [cardId, recipientId, senderId, secret, expiresAt], callback);
+},
 
-    // Method to create a pending share record with TOTP secret
-    createPendingShare: (cardId, recipientId, secret, callback) => {
-        const query = `
-            INSERT INTO pending_shares (card_id, recipient_id, secret)
-            VALUES (?, ?, ?)`;
-        db.query(query, [cardId, recipientId, secret], callback);
-    },
 
     // Method to retrieve a pending share by card ID and recipient ID
     getPendingShare: (cardId, recipientId, callback) => {
@@ -118,10 +120,11 @@ const User = {
     },
 
     // Method to share a card with a user
-    shareCardWithUser: (cardId, recipientId, callback) => {
-        const query = 'INSERT INTO shared_cards (card_id, user_id) VALUES (?, ?)';
-        db.query(query, [cardId, recipientId], callback);
+    shareCardWithUser: (cardId, senderId, recipientId, callback) => {
+        const query = 'INSERT INTO shared_cards (card_id, sender_id, recipient_id) VALUES (?, ?, ?)';
+        db.query(query, [cardId, senderId, recipientId], callback);
     },
+    
 
     // Method to get verified users with their shared cards
     getVerifiedUsers: (callback) => {
@@ -145,7 +148,6 @@ const User = {
         });
     },
 
-    // Method to fetch pending shared cards for a user
     getPendingSharedCards: (userId, callback) => {
         const query = `
             SELECT c.*
@@ -158,6 +160,7 @@ const User = {
         `;
         db.query(query, [userId], callback);
     },
+    
 };
 
 module.exports = User;

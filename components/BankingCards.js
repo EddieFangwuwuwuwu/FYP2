@@ -9,7 +9,9 @@ import ImageModal from './profileImage/ImageModal';
 
 function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const { user } = useContext(UserContext); 
-  const userId = user?.id;
+  const senderId = user?.id;  // Assuming 'user' comes from UserContext and contains the user's ID
+  const [selectedUserId, setSelectedUserId] = useState(null); // Selected recipient (user to share the card with)
+  const recipientId = selectedUserId;  // Get this ID from the selected user (the recipient)  
   const username = user?.username || "Guest";
   const [verifiedSharedCards, setVerifiedSharedCards] = useState([]); // New state for verified shared cards
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,18 +57,18 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       // Filter out only the verified shared cards (assumes sharedCards have an `is_verified` flag)
       const verifiedSharedCards = sharedCards.filter(card => card.is_verified);
   
-      // Fetch owned cards (owned by the current user)
-      const userCards = fetchedCards.filter(card => card.user_id === userId); // User's own cards
+      // Ensure 'user' is defined and fetch owned cards (owned by the current user)
+      const userCards = fetchedCards.filter(card => card.user_id === user?.id); // Use user?.id from UserContext
   
       // Set owned cards to the state
       setCards(userCards);
   
       // Set verified shared cards to the state
-      setVerifiedSharedCards(verifiedSharedCards);  // <-- This is the key part you're missing
+      setVerifiedSharedCards(verifiedSharedCards); 
   
-      // Handle case where no verified cards are found
+      // Handle case where no verified or owned cards are found
       if (userCards.length === 0 && verifiedSharedCards.length === 0) {
-        console.warn('No cards found for user:', userId);
+        console.warn('No cards found for user:', user?.id);
       }
   
       // Store unverified shared cards (those waiting for verification)
@@ -81,6 +83,7 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       console.error('Failed to fetch cards:', error);
     }
   };
+  
 
   const addCard = async (newCard) => {
     setCards((prevCards) => {
@@ -107,61 +110,72 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
     setModalVisible(false);
   };
 
-
-const loadVerifiedSharedCards = async () => {
-  try {
-    const verifiedShared = await fetchVerifiedSharedCards(userId);
-    console.log("Verified shared cards fetched:", verifiedShared);  // Check if the fetched cards contain full details
-    
-    // Check if the fetched data contains necessary card details (bank_type, card_number, etc.)
-    if (verifiedShared.length > 0 && verifiedShared[0].bank_type) {
-      setVerifiedSharedCards(verifiedShared);  // Only set if data is valid
-    } else {
-      console.warn('Fetched verified shared cards, but missing card details.');
-    }
-  } catch (error) {
-    console.error('Error fetching verified shared cards:', error);
-  }
-};
-
-
-
-const handleVerifyTOTP = async () => {
-  if (!selectedCard) {
-      Alert.alert('Error', 'No card selected for verification.');
-      return;
-  }
-
-  try {
-      console.log('Sending TOTP verification request with:');
-      console.log('Card ID:', selectedCard.id);
-      console.log('User ID:', userId);
-      console.log('TOTP Code:', totpCode);
-
-      const response = await verifyTOTP(selectedCard.id, userId, totpCode);
+  const loadVerifiedSharedCards = async () => {
+    try {
+      const verifiedShared = await fetchVerifiedSharedCards(user?.id);
+      console.log("Verified shared cards fetched:", verifiedShared);  // Check if the fetched cards contain full details
       
-      // Log the response from the backend
-      console.log('Received response from verifyTOTP API:', response);
-
-      if (response.success) {
-          console.log('TOTP verification successful.');
-          Alert.alert('Success', 'Card sharing verified successfully!');
-          
-          setTotpModalOpen(false);
-          setTotpCode('');
-          setTotpError('');
-
-          // Reload both owned cards and verified shared cards after verification
-          await loadCards();
-          await loadVerifiedSharedCards();  // <-- Ensure shared cards are reloaded
+      // Check if the fetched data is valid and contains necessary card details
+      if (Array.isArray(verifiedShared) && verifiedShared.length > 0 && verifiedShared[0].bank_type) {
+        setVerifiedSharedCards(verifiedShared);  // Only set if data is valid
+      } else if (verifiedShared.length === 0) {
+        console.warn('No verified shared cards found for this user.');
+        setVerifiedSharedCards([]);  // Clear the state if no cards are found
       } else {
-          console.log('TOTP verification failed. Received response:', response);
-          setTotpError('Invalid TOTP code. Please try again.');
+        console.warn('Fetched verified shared cards, but missing card details.');
+        setVerifiedSharedCards([]);  // Clear the state if data is invalid
       }
-  } catch (error) {
-      console.error('Error verifying TOTP:', error);
-      Alert.alert('Error', 'Failed to verify TOTP. Please try again.');
-  }
+    } catch (error) {
+      console.error('Error fetching verified shared cards:', error);
+      setVerifiedSharedCards([]);  // Clear the state if there was an error
+    }
+  };
+  
+  const handleVerifyTOTP = async () => {
+    if (!selectedCard) {
+        Alert.alert('Error', 'No card selected for verification.');
+        return;
+    }
+
+    const recipientId = user?.id;  // Eddie's ID (the current logged-in user)
+
+    if (!recipientId) {
+        Alert.alert('Error', 'No recipient selected.');
+        return;
+    }
+
+    try {
+        console.log('Sending TOTP verification request with:', {
+            cardId: selectedCard.id,
+            recipientId,  // Correct recipient (Eddie)
+            totpCode      // TOTP code entered by Eddie
+        });
+
+        // No need to send `senderId` from the frontend, the backend will retrieve it
+        const response = await verifyTOTP(selectedCard.id, recipientId, totpCode);
+
+        if (response.success) {
+            Alert.alert('Success', 'Card sharing verified successfully!');
+            
+            // Reset TOTP modal and related states
+            setTotpModalOpen(false);
+            setTotpCode('');
+            setTotpError('');
+            
+            // Reset selectedCard and recipientId to prepare for future actions
+            setSelectedCard(null);
+            setSelectedUserId(null);  // Assuming you're tracking selected user for sharing
+            
+            // Reload cards to reflect any new changes
+            await loadCards();
+            await loadVerifiedSharedCards();
+        } else {
+            setTotpError('Invalid TOTP code. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error verifying TOTP:', error);
+        Alert.alert('Error', 'Failed to verify TOTP. Please try again.');
+    }
 };
 
 
@@ -309,7 +323,7 @@ const handleVerifyTOTP = async () => {
             </TouchableOpacity>
             <Icon name="credit-card" size={100} color="#1c2633" />
             <Text style={styles.addCardTitle}>Add New Card</Text>
-            <AddCardsForm userId={userId} addCard={addCard} />
+            <AddCardsForm userId={user?.id} addCard={addCard} />
           </View>
         </View>
       </Modal>

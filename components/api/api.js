@@ -158,11 +158,12 @@ export const shareCard = async (cardId, userIds) => {
 };
 
 // Generate TOTP for card sharing
-export const generateTOTP = async (cardId, recipientId) => {
+export const generateTOTP = async (cardId, recipientId, senderId) => {
     try {
         const response = await axios.post(`${API_URL}/generateTOTP`, {
             cardId,
             recipientId,
+            senderId  
         });
         return response.data;
     } catch (error) {
@@ -172,12 +173,13 @@ export const generateTOTP = async (cardId, recipientId) => {
 };
 
 // Verify TOTP for card sharing
-export const verifyTOTP = async (cardId, recipientId, token) => {
+export const verifyTOTP = async (cardId, recipientId, token, senderId) => {
     try {
         const response = await axios.post(`${API_URL}/verifyTOTP`, {
             cardId,
             recipientId,
-            token,
+            token, 
+            senderId // No need for senderId here
         });
         return response.data;
     } catch (error) {
@@ -185,6 +187,7 @@ export const verifyTOTP = async (cardId, recipientId, token) => {
         throw error;
     }
 };
+
 
 // Check for pending TOTP verification
 export const checkPendingVerification = async () => {
@@ -255,5 +258,16 @@ export const fetchVerifiedSharedCards = async (userId) => {
             console.error('Error fetching verified shared cards:', error);
             throw error;  // Rethrow the error for further handling (if needed)
         }
+    }
+};
+
+
+export const fetchUsersWithSharedCards = async (userId) => {
+    try {
+        const response = await axios.get(`${API_URL}/getUsersWithSharedCards/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching users with shared cards:', error);
+        throw error;
     }
 };
