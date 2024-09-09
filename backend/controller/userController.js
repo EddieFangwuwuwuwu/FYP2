@@ -557,7 +557,8 @@ exports.getUsersWithSharedCards = (req, res) => {
     const senderId = req.params.userId; // Get the sender's user ID from the request params
     
     const query = `
-        SELECT u.id, u.username, u.email, u.profile_picture, sc.card_id, bc.bank_type, bc.card_number, bc.expiration_date
+        SELECT u.id AS user_id, u.username, u.email, u.profile_picture, 
+               sc.card_id, bc.bank_type, bc.card_number, bc.expiration_date
         FROM users u
         JOIN shared_cards sc ON u.id = sc.recipient_id  -- Fetch users who received cards from the sender
         JOIN banking_cards bc ON sc.card_id = bc.id
@@ -569,6 +570,37 @@ exports.getUsersWithSharedCards = (req, res) => {
             console.error('Error fetching users with shared cards:', err);
             return res.status(500).send({ message: 'Error fetching shared users' });
         }
-        res.status(200).send(results);
+
+        // Group the cards by user
+        const usersWithSharedCards = results.reduce((acc, row) => {
+            const { user_id, username, email, profile_picture, card_id, bank_type, card_number, expiration_date } = row;
+
+            // Find if the user already exists in the accumulator
+            let user = acc.find(u => u.id === user_id);
+
+            // If the user doesn't exist, create a new user object
+            if (!user) {
+                user = {
+                    id: user_id,
+                    username,
+                    email,
+                    profile_picture,
+                    sharedCards: []
+                };
+                acc.push(user);
+            }
+
+            // Add the card to the user's sharedCards array
+            user.sharedCards.push({
+                card_id,
+                bank_type,
+                card_number,
+                expiration_date
+            });
+
+            return acc;
+        }, []);
+
+        res.status(200).send(usersWithSharedCards);
     });
 };

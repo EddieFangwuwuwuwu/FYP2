@@ -555,11 +555,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
-  verifyButtonText: {
+  verifyTOTPButtonText: {
     color: 'white',
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-SemiBold',
   },
+
+  countdownText:{
+    color: 'black',
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+  }
 });
 
 

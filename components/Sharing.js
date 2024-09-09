@@ -19,8 +19,21 @@ function SharingScreen() {
     const [remainingTime, setRemainingTime] = useState(300); // Initial time is 5 minutes (300 seconds)
     const [usersWithSharedCards, setUsersWithSharedCards] = useState([]);  // To store the users with shared cards
     const { user } = useContext(UserContext);
+    console.log('User data from context:', user);
     const userId = user?.id;
 
+    useEffect(() => {
+        if (selectedUserDetails) {
+          console.log('Selected User:', selectedUserDetails);  // Logs the selected user's details
+          if (selectedUserDetails.sharedCards && selectedUserDetails.sharedCards.length > 0) {
+            console.log('Shared Cards:', selectedUserDetails.sharedCards);  // Logs the shared cards
+          } else {
+            console.log('No shared cards available');
+          }
+        }
+      }, [selectedUserDetails]);
+      
+    
     useEffect(() => {
         const loadUsersWithCards = async () => {
             if (!userId) {
@@ -29,10 +42,18 @@ function SharingScreen() {
             }
             try {
                 // Fetch users that the logged-in user (Kathy) has shared cards with.
-                const fetchedUsersWithSharedCards = await fetchUsersWithSharedCards(userId, 'sender'); // Pass 'sender' or an equivalent parameter to fetch based on senderId
+                const fetchedUsersWithSharedCards = await fetchUsersWithSharedCards(userId, 'sender'); 
                 
-                console.log('Fetched Users with Shared Cards:', fetchedUsersWithSharedCards);  // Log the fetched data
-                setUsersWithSharedCards(fetchedUsersWithSharedCards);  // Set the users in state
+                // Log the fetched data to inspect its structure
+                console.log('Fetched Users with Shared Cards:', fetchedUsersWithSharedCards);
+                
+                // Check if each user object contains sharedCards
+                fetchedUsersWithSharedCards.forEach(user => {
+                    console.log('User:', user.username, 'Shared Cards:', user.sharedCards);  // Check if sharedCards is defined
+                });
+    
+                // Set the users in state
+                setUsersWithSharedCards(fetchedUsersWithSharedCards);
             } catch (error) {
                 console.error('Error fetching users with shared cards:', error);
             }
@@ -42,6 +63,14 @@ function SharingScreen() {
     }, [userId]);
     
     
+    const uniqueUsersWithSharedCards = usersWithSharedCards.reduce((acc, card) => {
+        if (!acc.some(user => user.id === card.id)) {
+            acc.push(card);
+        }
+        return acc;
+    }, []);
+
+
     useEffect(() => {
         if (modalOpen) {
             fetchUsers();
@@ -152,9 +181,6 @@ function SharingScreen() {
             setSelectedUsers([]);
             setSelectedCards([]);
     
-            // Show a success message
-            Alert.alert('Success', 'Card sharing initiated successfully!');
-    
         } catch (error) {
             console.error('Error sharing card:', error);
             Alert.alert('Error', 'Failed to share card. Please try again.');
@@ -162,9 +188,12 @@ function SharingScreen() {
     };
     
     const handleUserSelection = (user) => {
+        console.log('Selected User:', user);  // Ensure sharedCards exists
+        console.log('Shared Cards:', user.sharedCards);  // Log the shared cards data
         setSelectedUserDetails(user);
         setUserModalOpen(true);
     };
+    
 
     const filteredUsers = users.filter(user => user.username.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -174,7 +203,7 @@ function SharingScreen() {
                 {usersWithSharedCards.length === 0 ? 'No users to share cards with yet.' : 'Verified Users'}
             </Text>
             <FlatList
-                data={usersWithSharedCards}  // Display the users with shared cards
+               data={uniqueUsersWithSharedCards} 
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                     <TouchableOpacity onPress={() => handleUserSelection(item)} style={styles.cardItem}>
@@ -184,9 +213,6 @@ function SharingScreen() {
                     </TouchableOpacity>
                 )}
             />
-
-
-
 
             <Text style={styles.emptyText}>Select a user to share with</Text>
             <TouchableOpacity style={styles.addButton} onPress={() => setModalOpen(true)}>
@@ -279,7 +305,9 @@ function SharingScreen() {
       <TouchableOpacity style={styles.closeButton} onPress={() => setUserModalOpen(false)}>
         <Icon name="close" size={45} color="black" />
       </TouchableOpacity>
-      <Icon name="user" size={100} color="#1c2633" />
+      <View style={styles.iconContainer}>
+        <Icon name="user" size={100} color="#1c2633" />
+      </View>
       <Text style={styles.addUserTitle}>User Details</Text>
       {selectedUserDetails && (
         <View style={styles.userDetailsContainer}>
@@ -439,23 +467,31 @@ const styles = StyleSheet.create({
     sharedCards: {
         fontSize: 16,
         fontFamily: 'Poppins-Regular',
-        color: 'grey',
+        color: 'black',
     },
-    
-    userDetailsContainer: {
-        flex: 1,
-        width: '100%',
-        maxHeight: '60%', // Allow the content to be scrollable if it exceeds 60% height
-      },
 
-      userModalContent: {
+    userModalContent: {
         width: '100%',
-        maxHeight: '70%',  // Limit the modal height to 70% of the screen
+        maxHeight: '80%',
         backgroundColor: '#f7f7f7',
         borderRadius: 10,
         padding: 20,
-        alignItems: 'center',
         maxWidth: 400,
-        justifyContent: 'center',
-      },
+        flex: 1,
+        justifyContent: 'flex-start',
+    },
+    iconContainer: {
+        alignItems: 'center',  // Center the icon horizontally
+        marginBottom: 20,  // Add space between the icon and the title
+    },
+    userDetailsContainer: {
+        width: '100%',
+        marginTop: 20,
+        maxHeight: '60%',
+        flexGrow: 1,
+        flexDirection: 'column',
+        overflow: 'scroll',
+    },
+      
+
 });
