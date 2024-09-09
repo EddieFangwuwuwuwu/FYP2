@@ -6,6 +6,7 @@ import AddCardsForm from "./AddBankCardsForm";
 import { fetchCards, verifyTOTP, checkPendingVerification, fetchPendingSharedCards,fetchVerifiedSharedCards } from './api/api';
 import { UserContext } from './UserContext'; 
 import ImageModal from './profileImage/ImageModal';
+import InAppNotification from './InAppNotification';
 
 function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const { user } = useContext(UserContext); 
@@ -24,6 +25,13 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const [totpCode, setTotpCode] = useState('');
   const [totpError, setTotpError] = useState(''); // To store TOTP errors
   const [remainingTime, setRemainingTime] = useState(300);
+  const [showNotification, setShowNotification] = useState(false);
+  const [cardType, setCardType] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiredDate, setExpiredDate] = useState('');
+  const [myCardsModalVisible, setMyCardsModalVisible] = useState(false);
+  const [sharedCardsModalVisible, setSharedCardsModalVisible] = useState(false);
+  
 
   useEffect(() => {
     const loadData = async () => {
@@ -70,6 +78,24 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       if (userCards.length === 0 && verifiedSharedCards.length === 0) {
         console.warn('No cards found for user:', user?.id);
       }
+
+
+      const expiringCards = userCards.filter(card => {
+        const expirationDate = new Date(card.expiration_date);
+        const today = new Date();
+        const daysDiff = (expirationDate - today) / (1000 * 3600 * 24);
+        return daysDiff <= 30;  // Adjust this to use the reminder period
+    });
+
+    if (expiringCards.length > 0) {
+        const { card_type, card_number, expiration_date } = expiringCards[0];  // First expiring card
+
+        // Set card details for the notification
+        setCardType(card_type);
+        setCardNumber(card_number);
+        setExpiredDate(expiration_date);
+        setShowNotification(true);  // Show the notification
+    }
   
       // Store unverified shared cards (those waiting for verification)
       const pendingVerificationCards = sharedCards.filter(card => !card.is_verified);
@@ -224,6 +250,16 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
 
   return (
     <View style={styles.container}>
+
+<InAppNotification
+          cardType={cardType}
+          cardNumber={cardNumber}
+          expiredDate={expiredDate}  // Pass the expiration date to the notification
+          visible={showNotification}
+          onClick={() => setShowNotification(false)}  // Hide notification when clicked
+          onClose={() => setShowNotification(false)}  // Automatically hide after 3 seconds
+        />
+
       <View style={styles.userSection}>
         <TouchableOpacity onPress={handleAvatarPress}>
           {user?.profilePicture ? (
@@ -242,69 +278,113 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
           <Icon name="credit-card" size={20} color="#1c2633" />
           <Text style={styles.buttonText}>add card</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.smallButton}>
+        <TouchableOpacity style={styles.smallButton} onPress={() => navigation.navigate('Category')}>
           <Icon name="folder-o" size={20} color="#1c2633" />
-          <Text style={styles.buttonText}>create category</Text>
+          <Text style={styles.buttonText}>Create Category</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.smallButton}>
+        <TouchableOpacity style={styles.smallButton} onPress={() => navigation.navigate('Sharing')}>
           <Icon name="user-plus" size={20} color="#1c2633" />
-          <Text style={styles.buttonText}>sharing account</Text>
+          <Text style={styles.buttonText}>Sharing Account</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.smallButton}>
+        <TouchableOpacity style={styles.smallButton} onPress={() => navigation.navigate('Setting')}>
           <Icon name="cogs" size={20} color="#1c2633" />
           <Text style={styles.buttonText}>Settings</Text>
         </TouchableOpacity>
       </View>
 
+
+      {cards.length > 0 && (
+        <TouchableOpacity style={styles.cardShape} onPress={() => setMyCardsModalVisible(true)}>
+          <Text style={styles.cardText}>My Cards</Text>
+          <Icon name="chevron-right" size={30} color="white" style={styles.iconRight} />
+        </TouchableOpacity>
+      )}
+
+<Modal
+  visible={myCardsModalVisible}
+  animationType="slide"
+  transparent={true}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <TouchableOpacity style={styles.closeButton} onPress={() => setMyCardsModalVisible(false)}>
+        <Icon name="close" size={45} color="black" />
+      </TouchableOpacity>
+      <Text style={styles.modalTitle}>My Cards</Text>
+
+      <FlatList
+        data={cards}  // Cards owned by the user
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            style={styles.modalItem}  // Updated card style
+            onPress={() => {
+              setSelectedCard(item);
+              setDetailModalOpen(true);
+            }}
+          >
+            <View style={styles.itemContent}>
+              <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+              <View style={styles.textcontainer}>
+                <Text style={styles.name}>{item.bank_type}</Text>  
+                <Text style={styles.subname}>{item.card_number}</Text>
+              </View>
+              <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  </View>
+</Modal>
+
+
+
+
+{verifiedSharedCards.length > 0 && (
+  <TouchableOpacity style={styles.cardShape} onPress={() => setSharedCardsModalVisible(true)}>
+    <Text style={styles.cardText}>Shared Cards</Text>
+    <Icon name="chevron-right" size={30} color="white" style={styles.iconRight} />
+  </TouchableOpacity>
+)}
+
+<Modal
+  visible={sharedCardsModalVisible}
+  animationType="slide"
+  transparent={true}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <TouchableOpacity style={styles.closeButton} onPress={() => setSharedCardsModalVisible(false)}>
+        <Icon name="close" size={45} color="black" />
+      </TouchableOpacity>
+      <Text style={styles.modalTitle}>Shared Cards</Text>
       
-<Text style={styles.title}>My cards</Text>
-<FlatList
-  data={cards}  // Cards owned by the user
-  keyExtractor={(item) => item.id.toString()}
-  renderItem={({ item }) => (
-    <TouchableOpacity 
-      style={styles.items}
-      onPress={() => {
-        setSelectedCard(item);
-        setDetailModalOpen(true);
-      }}
-    >
-      <View style={styles.itemContent}>
-        <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-        <View style={styles.textcontainer}>
-          <Text style={styles.name}>{item.bank_type}</Text>  
-          <Text style={styles.subname}>{item.card_number}</Text>
-        </View>
-        <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-      </View>
-    </TouchableOpacity>
-  )}
-/>
-
-
-<Text style={styles.title}>Shared cards</Text>
-<FlatList
-  data={verifiedSharedCards}  // Verified shared cards
-  keyExtractor={(item) => item.id.toString()}
-  renderItem={({ item }) => (
-    <TouchableOpacity 
-      style={styles.items}
-      onPress={() => {
-        setSelectedCard(item);
-        setDetailModalOpen(true);
-      }}
-    >
-      <View style={styles.itemContent}>
-        <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-        <View style={styles.textcontainer}>
-          <Text style={styles.name}>{item.bank_type}</Text>  
-          <Text style={styles.subname}>{item.card_number}</Text>
-        </View>
-        <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-      </View>
-    </TouchableOpacity>
-  )}
-/>
+      <FlatList
+        data={verifiedSharedCards}  // Verified shared cards
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            style={styles.modalItem}  // Updated card style for shared cards
+            onPress={() => {
+              setSelectedCard(item);
+              setDetailModalOpen(true);
+            }}
+          >
+            <View style={styles.itemContent}>
+              <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+              <View style={styles.textcontainer}>
+                <Text style={styles.name}>{item.bank_type}</Text>  
+                <Text style={styles.subname}>{item.card_number}</Text>
+              </View>
+              <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  </View>
+</Modal>
 
       
       <TouchableOpacity style={styles.addcards} onPress={() => setModalOpen(true)}>
@@ -466,17 +546,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   name: {
+    fontSize: 18,
     color: 'white',
-    paddingTop: 0,
-    fontSize: 20,
-    fontFamily: 'Poppins-SemiBold',
-    paddingLeft: 20,
+    fontWeight: 'bold',
   },
   subname: {
+    fontSize: 16,
     color: 'white',
-    fontSize: 15,
-    fontFamily: 'Poppins-Regular',
-    paddingLeft: 20,
   },
   icon: {
     marginLeft: 20,
@@ -514,7 +590,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: '80%',
+    width: '90%',
     backgroundColor: '#f7f7f7',
     borderRadius: 10,
     padding: 20,
@@ -565,7 +641,63 @@ const styles = StyleSheet.create({
     color: 'black',
     fontSize: 16,
     fontFamily: 'Poppins-Regular',
-  }
+  },
+  cardShape: {
+    backgroundColor: '#1c2633', // Dark background
+    borderRadius: 20, // Rounded corners like a card
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    height: 130,
+    marginVertical: 30,
+    width: '90%',
+    alignSelf: 'center', // Center the card horizontally
+    shadowColor: '#000', // Shadow for 3D effect
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.37,
+    shadowRadius: 7.49,
+    elevation: 12, // Elevation for Android shadow
+  },
+  cardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardText: {
+    color: 'white', // Text color
+    fontSize: 20, // Larger text for emphasis
+    fontFamily: 'Poppins-SemiBold',
+  },
+
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#1c2633',  // Darker title color
+  },
+
+  modalItem: {
+    backgroundColor: '#1c2633',  // Dark card color
+    borderRadius: 15,
+    marginVertical: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+
+  itemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  iconRight: {
+    marginLeft: 'auto',
+  },
 });
 
 

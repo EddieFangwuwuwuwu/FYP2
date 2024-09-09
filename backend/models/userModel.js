@@ -161,6 +161,25 @@ createPendingShare: (cardId, recipientId, senderId, secret, expiresAt, callback)
         db.query(query, [userId], callback);
     },
     
+    saveReminderSettings: (userId, reminderPeriod, callback) => {
+        const query = 'UPDATE users SET reminder_period = ? WHERE id = ?';
+        db.query(query, [reminderPeriod, userId], callback);
+    },
+
+    // Method to fetch the reminder period for a user
+    getReminderSettings: (userId, callback) => {
+        const query = 'SELECT reminder_period FROM users WHERE id = ?';
+        db.query(query, [userId], (err, result) => {
+            if (err) {
+                return callback(err, null);
+            }
+            if (result.length === 0) {
+                return callback(null, null);  // User not found
+            }
+            return callback(null, result[0]);  // Return reminder_period
+        });
+    },
+
 };
 
 module.exports = User;

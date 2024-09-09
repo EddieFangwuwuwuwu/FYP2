@@ -604,3 +604,33 @@ exports.getUsersWithSharedCards = (req, res) => {
         res.status(200).send(usersWithSharedCards);
     });
 };
+
+exports.saveReminderSettings = (req, res) => {
+    const { userId, reminderPeriod } = req.body;  
+    
+    const query = 'UPDATE users SET reminder_period = ? WHERE id = ?';
+    
+    db.query(query, [reminderPeriod, userId], (err, result) => {
+        if (err) {
+            return res.status(500).send({ message: 'Error updating reminder settings', error: err });
+        }
+        return res.status(200).send({ message: 'Reminder settings updated successfully!' });
+    });
+};
+
+
+exports.getReminderSettings = (req, res) => {
+    const { userId } = req.params;  // Use userId from request params
+    
+    const query = 'SELECT reminder_period FROM users WHERE id = ?';
+    
+    db.query(query, [userId], (err, result) => {
+        if (err) {
+            return res.status(500).send({ message: 'Error fetching reminder settings', error: err });
+        }
+        if (result.length === 0) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+        return res.status(200).send(result[0]);  // Return the reminder_period only
+    });
+};

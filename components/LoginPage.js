@@ -16,7 +16,7 @@ function LoginPage() {
             const response = await loginUser({ email, password });
             if (response.user) {
                 const { id, username } = response.user;
-
+    
                 try {
                     const userProfile = await fetchUserProfile();
                     setUser({
@@ -26,8 +26,8 @@ function LoginPage() {
                             ? `http://10.0.2.2:8082${userProfile.profile_picture}`
                             : null,
                     });
-
-                    // Navigate to BankingCards page
+    
+                    // Navigate to the home screen
                     navigation.reset({
                         index: 0,
                         routes: [{
@@ -42,8 +42,8 @@ function LoginPage() {
                         }],
                     });
                 } catch (error) {
-                    console.error('Error fetching user profile after login:', error);
-                    Alert.alert('Profile Error', 'Failed to load user profile.');
+                    console.error('Error fetching user profile or cards:', error);
+                    Alert.alert('Error', 'Failed to load user data.');
                 }
             } else {
                 Alert.alert('Login failed', 'Invalid credentials');
@@ -85,23 +85,14 @@ function LoginPage() {
                     style={styles.textInput}
                 />
             </View>
-            <View style={styles.forgotPasswordContainer}>
-                <TouchableOpacity>
-                    <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-                </TouchableOpacity>
-            </View>
+           
             <View>
                 <TouchableOpacity style={styles.button} onPress={handleLogin}>
                     <Text style={styles.buttonText}>Log In</Text>
                 </TouchableOpacity>
             </View>
-            <Text style={styles.orText}>or continue with</Text>
-            <View style={styles.googleContainer}>
-                <TouchableOpacity style={styles.google}>
-                    <Image source={require("../Image/google.jpg")} style={styles.googleLogo}/>
-                    <Text style={styles.googleText}>Google</Text>
-                </TouchableOpacity>
-            </View>
+
+            
             <View style={styles.signUpContainer}>
                 <Text style={styles.signUpText}>Don't have an account?</Text>
                 <TouchableOpacity style={styles.signUpButton} onPress={() => navigation.navigate('SignUp')}>
@@ -123,6 +114,7 @@ const styles = StyleSheet.create({
     logoContainer: {
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: 40, // Increased space to balance layout
     },
     logo: {
         width: 100,
@@ -175,58 +167,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 15,
-        marginBottom: 20,
+        marginBottom: 40, // More space after the button
     },
     buttonText: {
         color: 'white',
         fontSize: 18,
         fontFamily: "Poppins-SemiBold",
     },
-    orText: {
-        fontSize: 15,
-        textAlign: 'center',
-        paddingVertical: 20,
-        fontFamily: 'Poppins-Regular',
-    },
-    googleContainer: {},
-    google: {
-        borderRadius: 25,
-        borderWidth: 1,
-        textAlign: 'center',
-        paddingHorizontal: 10,
-        alignItems: 'center',
-        borderColor: 'black',
-        flexDirection: 'row',
-        justifyContent: 'center',
-    },
-    googleText: {
-        color: 'black',
-        fontSize: 15,
-        fontFamily: 'Poppins-Regular',
-        textAlign: 'center',
-        marginTop: 2,
-        paddingLeft: 5,
-        paddingVertical: 10,
-    },
-    googleLogo: {
-        width: 24,
-        height: 24,
-    },
     signUpContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 12,
+        paddingVertical: 20, // Increased padding for balance
     },
     signUpText: {
         marginHorizontal: 5,
         fontFamily: 'Poppins-Regular',
-    },
-    signUpButton: {
-        bottom: 1,
+        fontSize: 16,
     },
     signUpButtonText: {
         fontFamily: 'Poppins-Regular',
         color: 'black',
+        fontSize: 16,
     },
 });

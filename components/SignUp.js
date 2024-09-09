@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import { registerUser } from './api/api';
@@ -68,17 +68,12 @@ function SignUpPage() {
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
       </View>
-      <Text style={{ fontSize: 15, textAlign: 'center', paddingVertical: 30 }}>or continue with</Text>
-      <View style={styles.googleContainer}>
-        <TouchableOpacity style={styles.google}>
-          <Image source={require("../Image/google.jpg")} style={styles.googleLogo}/>
-          <Text style={styles.googleText}>Google</Text>
-        </TouchableOpacity>
-      </View>
+
+      {/* Adjusted "Already have an account?" section */}
       <View style={styles.signInContainer}>
         <Text style={styles.signInText}>Already have an account?</Text>
         <TouchableOpacity style={styles.signInButton} onPress={() => navigation.navigate('Login')}>
-          <Text style={{ fontFamily: 'Poppins-Regular', fontWeight: 'bold' }}>Sign In</Text>
+          <Text style={styles.signInButtonText}>Sign In</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -86,8 +81,6 @@ function SignUpPage() {
 }
 
 export default SignUpPage;
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -102,7 +95,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 40,
     fontWeight: '400',
-   fontFamily: "Poppins-SemiBold",
+    fontFamily: "Poppins-SemiBold",
     color: 'black',
   },
   textInputContainer: {
@@ -121,58 +114,37 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     height: 50,
-    
   },
-
-  button:{
-    backgroundColor:'#1c2633',
-    borderRadius:25
+  button: {
+    backgroundColor: '#1c2633',
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    marginBottom: 40, // Adjusted spacing
   },
-  buttonText:{
-    color:'white',
-    fontSize:18,
-    textAlign:'center',
-    padding:10,
-    fontFamily:"Poppins-SemiBold"
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    textAlign: 'center',
+    padding: 10,
+    fontFamily: "Poppins-SemiBold",
   },
-  googleContainer:{
-
+  signInContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
   },
-  google:{
-    borderRadius:25,
-    borderWidth:1,
-    textAlign:'center',
-    paddingHorizontal:10,
-    alignItems:'center',
-    borderColor:'black',
-    flexDirection:'row',
-    justifyContent:'center'
+  signInText: {
+    marginHorizontal: 5,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 16,
   },
-  googleText:{
-    color:'black',
-    fontSize:15,
-    fontFamily:'Poppins-Regular',
-    textAlign:'center',
-    marginTop:2,
-    paddingLeft:5,
-    paddingVertical:10,
+  signInButtonText: {
+    fontFamily: 'Poppins-Regular',
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
-  googleLogo:{
-    width:24,
-    height:24
-  },
-  signInContainer:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'center',
-    paddingVertical:10,
-   
-  },
-  signInText:{
-    marginHorizontal:5,
-    fontFamily:'Poppins-Regular',
-  },
-  signInButton:{
-   bottom:2
-  }
 });

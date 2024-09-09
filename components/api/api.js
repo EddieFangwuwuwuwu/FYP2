@@ -271,3 +271,28 @@ export const fetchUsersWithSharedCards = async (userId) => {
         throw error;
     }
 };
+
+// Save reminder settings (for reminder period)
+export const saveReminderSettings = async (userId, reminderPeriod) => {
+    try {
+        const response = await axios.post(`${API_URL}/saveReminderSettings`, {
+            userId,
+            reminderPeriod
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error saving reminder settings:', error);
+        throw error;
+    }
+};
+
+// Fetch reminder settings (for reminder period)
+export const getReminderSettings = async (userId) => {
+    try {
+        const response = await axios.get(`${API_URL}/getReminderSettings/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching reminder settings:', error);
+        throw error;
+    }
+};
