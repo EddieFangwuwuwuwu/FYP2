@@ -16,6 +16,8 @@ import SearchBarAnimation from './components/Search/SearchBarAnimation';
 import LoginPage from './components/LoginPage';
 import SignUpPage from './components/SignUp';
 import CategoryaddCards from './components/CategoryAddCard';
+import ApplicationGuideline from './components/ApplicationGuideline';
+import SecurityFeature from './components/SecurityFeatures';
 import { UserProvider } from './components/UserContext'; // Import UserProvider
 
 const StackNav = ({ navigation }) => {
@@ -46,7 +48,7 @@ const StackNav = ({ navigation }) => {
         name="BankingCards" 
         options={{
           headerTitle: searchVisible ? '' : 'BankingCards',
-          headerRight: renderHeaderRight,
+          
         }} 
       >
         {props => <BankingcardsScreen {...props} searchQuery={searchQuery} />}
@@ -75,7 +77,7 @@ const StackNav = ({ navigation }) => {
           />
         ),
       })} />
-      <Stack.Screen name="Edit Expiration Date" component={EditExpireDate}
+      <Stack.Screen name="Edit Card Expiration Reminder" component={EditExpireDate}
        options={({ navigation }) => ({
         headerLeft: () => (
           <Icon.Button 
@@ -103,6 +105,38 @@ const StackNav = ({ navigation }) => {
           ),
         })} 
       />
+    <Stack.Screen 
+    name="ApplicationGuideline" 
+    component={ApplicationGuideline} 
+    options={({ route, navigation }) => ({
+      title: 'Application Guideline',
+      headerLeft: () => (
+        <Icon.Button 
+          name="arrow-left" 
+          size={30} 
+          backgroundColor="#f5f5f5"
+          color="#1c2633" 
+          onPress={() => navigation.navigate('AppGuide')}  // Explicitly navigate to AppGuide
+        />
+      ),
+    })} 
+/>
+<Stack.Screen 
+    name="SecurityFeature" 
+    component={SecurityFeature} 
+    options={({ route, navigation }) => ({
+      title: 'Security Features',
+      headerLeft: () => (
+        <Icon.Button 
+          name="arrow-left" 
+          size={30} 
+          backgroundColor="#f5f5f5"
+          color="#1c2633" 
+          onPress={() => navigation.navigate('AppGuide')}  // Explicitly navigate to AppGuide
+        />
+      ),
+    })} 
+/>
     </Stack.Navigator>
   );
 };

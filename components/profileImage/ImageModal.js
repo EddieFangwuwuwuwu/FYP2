@@ -3,6 +3,7 @@ import { Modal, View, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 const ImageModal = ({ visible, onClose, imageUri }) => {
+    const imageSource = typeof imageUri === 'string' ? { uri: imageUri } : imageUri;
     return (
         <Modal
             visible={visible}
@@ -15,7 +16,7 @@ const ImageModal = ({ visible, onClose, imageUri }) => {
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                         <Icon name="close" size={30} color="#1c2633" />
                     </TouchableOpacity>
-                    <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
+                    <Image source={imageSource} style={styles.image} resizeMode="contain" />
                 </View>
             </View>
         </Modal>

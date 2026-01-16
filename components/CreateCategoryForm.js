@@ -3,6 +3,12 @@ import { Formik } from 'formik';
 import { StyleSheet, View, TextInput, Button, Text, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { createCategory } from './api/api'; // Import your createCate function
+import * as Yup from 'yup'; 
+
+const validationSchema = Yup.object().shape({
+    categoryName: Yup.string()
+      .required('Category name is required'),  // Add required validation for categoryName
+  });
 
 function CreateCategoryForm({ addCategory, userId }) {  // Accept userId as a prop
     const [selectedCategoryType, setCategoryType] = useState('Credit Card');
@@ -16,19 +22,28 @@ function CreateCategoryForm({ addCategory, userId }) {  // Accept userId as a pr
 
         try {
             const response = await createCategory(newCategory);
+
+            const createdCategory={
+                cateName:response.cateName,
+                cateType:response.cateType,
+                userId:response.userId,
+                id:response.id
+            };
+
             Alert.alert('Success', 'Category created successfully');
-            addCategory(newCategory); // Update the UI with the new category
+            addCategory(createdCategory); // Update the UI with the new category
         } catch (error) {
             Alert.alert('Error', 'Failed to create category');
             console.error('Error creating category:', error);
         }
-    };
+    };  
 
     return (
         <View style={styles.container}>
             <Formik
                 initialValues={{ categoryName: '' }}
                 onSubmit={handleSubmit} // Use the handleSubmit function
+                validationSchema={validationSchema}
             >
                 {(props) => (
                     <View style={styles.form}>
@@ -39,6 +54,9 @@ function CreateCategoryForm({ addCategory, userId }) {  // Accept userId as a pr
                             value={props.values.categoryName}
                             style={styles.input}
                         />
+                        {props.touched.categoryName && props.errors.categoryName && (  // Show error message if field is touched and has an error
+                            <Text style={styles.errorText}>{props.errors.categoryName}</Text>
+                        )}
 
                         <Text style={styles.label}>Category Type:</Text>
                         <View style={styles.pickerContainer}>
@@ -106,6 +124,11 @@ const styles = StyleSheet.create({
     submitButtonContainer: {
         marginTop: 20,
         width: '100%',
+    },
+    errorText: {  // Style for error text
+        color: 'red',
+        fontSize: 12,
+        marginBottom: 10,
     },
 });
 

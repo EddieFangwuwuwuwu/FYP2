@@ -12,6 +12,11 @@ function LoginPage() {
     const { setUser } = useContext(UserContext);
 
     const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please fill in both email and password');
+            return;
+        }
+
         try {
             const response = await loginUser({ email, password });
             if (response.user) {
@@ -49,8 +54,8 @@ function LoginPage() {
                 Alert.alert('Login failed', 'Invalid credentials');
             }
         } catch (error) {
-            console.error('Login Error:', error);
-            Alert.alert('Login Error', 'Something went wrong. Please try again.');
+           
+            Alert.alert('Login Error','Invalid Credential');
         }
     };
 

@@ -3,12 +3,13 @@ import { Avatar } from 'react-native-paper';
 import { Text, View, TouchableOpacity, StyleSheet, Modal, FlatList, TextInput, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AddCardsForm from "./AddBankCardsForm";
-import { fetchCards, verifyTOTP, checkPendingVerification, fetchPendingSharedCards,fetchVerifiedSharedCards } from './api/api';
+import { fetchCards, verifyTOTP, checkPendingVerification, fetchPendingSharedCards,fetchVerifiedSharedCards, deleteCard,editCardDetails } from './api/api';
 import { UserContext } from './UserContext'; 
 import ImageModal from './profileImage/ImageModal';
 import InAppNotification from './InAppNotification';
 
-function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
+
+function BankingCardsScreen({ navigation, route= '' }) {
   const { user } = useContext(UserContext); 
   const senderId = user?.id;  // Assuming 'user' comes from UserContext and contains the user's ID
   const [selectedUserId, setSelectedUserId] = useState(null); // Selected recipient (user to share the card with)
@@ -31,8 +32,9 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   const [expiredDate, setExpiredDate] = useState('');
   const [myCardsModalVisible, setMyCardsModalVisible] = useState(false);
   const [sharedCardsModalVisible, setSharedCardsModalVisible] = useState(false);
+  const [filteredCards, setFilteredCards] = useState([]); 
+  const [searchQuery, setSearchQuery] = useState('');
   
-
   useEffect(() => {
     const loadData = async () => {
       await loadCards(); 
@@ -51,7 +53,15 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   }, [pendingCards]);  // This will trigger when pendingCards state changes
 
   
-  
+  useEffect(() => {
+    const filtered = cards.filter(card =>
+      card.bank_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      card.card_number?.includes(searchQuery)
+    );
+    setFilteredCards(filtered);
+  }, [searchQuery, cards]);  // Update filteredCards when searchQuery or cards change
+
+
   const loadCards = async () => {
     try {
       // Fetch cards owned by the user
@@ -74,10 +84,6 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       // Set verified shared cards to the state
       setVerifiedSharedCards(verifiedSharedCards); 
   
-      // Handle case where no verified or owned cards are found
-      if (userCards.length === 0 && verifiedSharedCards.length === 0) {
-        console.warn('No cards found for user:', user?.id);
-      }
 
 
       const expiringCards = userCards.filter(card => {
@@ -124,9 +130,6 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
     }
   };
 
-  const filteredCards = cards.filter(card =>
-    card.bank_type && card.bank_type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const handleAvatarPress = () => {
     setModalVisible(true);
@@ -145,10 +148,10 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
       if (Array.isArray(verifiedShared) && verifiedShared.length > 0 && verifiedShared[0].bank_type) {
         setVerifiedSharedCards(verifiedShared);  // Only set if data is valid
       } else if (verifiedShared.length === 0) {
-        console.warn('No verified shared cards found for this user.');
+       
         setVerifiedSharedCards([]);  // Clear the state if no cards are found
       } else {
-        console.warn('Fetched verified shared cards, but missing card details.');
+        
         setVerifiedSharedCards([]);  // Clear the state if data is invalid
       }
     } catch (error) {
@@ -204,6 +207,37 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
     }
 };
 
+const handleDeleteCard = (cardId) => {
+  Alert.alert(
+      "Confirm Deletion",
+      "Are you sure you want to delete this banking card?",
+      [
+          {
+              text: "Cancel",
+              style: "cancel"
+          },
+          {
+              text: "Delete",
+              onPress: async () => {
+                  try {
+                      // Make an API call to delete the card from the database
+                      await deleteCard(cardId); // Assuming you have a deleteCard function in your API
+                      Alert.alert('Card deleted successfully.');
+                      
+                      // Reload cards after deletion
+                      await loadCards();
+                      setDetailModalOpen(false); // Close the details modal
+                  } catch (error) {
+                      console.error('Error deleting card:', error);
+                      Alert.alert('Error', 'Failed to delete the card. Please try again.');
+                  }
+              },
+              style: "destructive"
+          }
+      ],
+      { cancelable: true }
+  );
+};
 
   const handlePendingVerification = async () => {
     try {
@@ -284,7 +318,7 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton} onPress={() => navigation.navigate('Sharing')}>
           <Icon name="user-plus" size={20} color="#1c2633" />
-          <Text style={styles.buttonText}>Sharing Account</Text>
+          <Text style={styles.buttonText}>Share cards</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.smallButton} onPress={() => navigation.navigate('Setting')}>
           <Icon name="cogs" size={20} color="#1c2633" />
@@ -305,41 +339,46 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
   animationType="slide"
   transparent={true}
 >
-  <View style={styles.modalOverlay}>
+  <View style={styles.modalOverlay} pointerEvents="box-none">
     <View style={styles.modalContent}>
       <TouchableOpacity style={styles.closeButton} onPress={() => setMyCardsModalVisible(false)}>
         <Icon name="close" size={45} color="black" />
       </TouchableOpacity>
       <Text style={styles.modalTitle}>My Cards</Text>
 
-      <FlatList
-        data={cards}  // Cards owned by the user
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
+      <TextInput
+              style={styles.searchBar}
+              placeholder="Search cards..."
+              value={searchQuery}
+              onChangeText={(text) => setSearchQuery(text)}  // Update search query as the user types
+            />
+
+<FlatList
+  data={filteredCards}  
+  keyExtractor={(item) => item.id.toString()}
+  renderItem={({ item }) => (
+    <TouchableOpacity 
             style={styles.modalItem}  // Updated card style
             onPress={() => {
               setSelectedCard(item);
               setDetailModalOpen(true);
             }}
           >
-            <View style={styles.itemContent}>
-              <Icon name="credit-card" size={45} color="white" style={styles.icon} />
-              <View style={styles.textcontainer}>
-                <Text style={styles.name}>{item.bank_type}</Text>  
-                <Text style={styles.subname}>{item.card_number}</Text>
-              </View>
-              <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+      <View style={styles.itemContent}>
+        <Icon name="credit-card" size={45} color="white" style={styles.icon} />
+        <View style={styles.textcontainer}>
+          <Text style={styles.name}>{item.bank_type}</Text>  
+          <Text style={styles.subname}>{item.card_number}</Text>
+        </View>
+        <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
+      </View>
+    </TouchableOpacity>
+  )}
+/>
+
     </View>
   </View>
 </Modal>
-
-
-
 
 {verifiedSharedCards.length > 0 && (
   <TouchableOpacity style={styles.cardShape} onPress={() => setSharedCardsModalVisible(true)}>
@@ -408,35 +447,44 @@ function BankingCardsScreen({ navigation, route, searchQuery = '' }) {
         </View>
       </Modal>
 
-      <Modal
-        visible={detailModalOpen}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setDetailModalOpen(false)}>
-              <Icon name="close" size={45} color="black" />
+
+<Modal
+  visible={detailModalOpen}
+  animationType="slide"
+  transparent={true}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <TouchableOpacity style={styles.closeButton} onPress={() => setDetailModalOpen(false)}>
+        <Icon name="close" size={45} color="black" />
+      </TouchableOpacity>
+      <Icon name="credit-card" size={100} color="#1c2633" />
+      <Text style={styles.addCardTitle}>Card Details</Text>
+
+      {selectedCard && (
+        <View>
+          <Text style={styles.label}>Bank Type: {selectedCard.bank_type}</Text>
+          <Text style={styles.label}>Card Number: {selectedCard.card_number}</Text>
+          <Text style={styles.label}>Card Type: {selectedCard.card_type}</Text>
+          <Text style={styles.label}>Expiration Date: {new Date(selectedCard.expiration_date).toDateString()}</Text>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity onPress={() => handleDeleteCard(selectedCard.id)} style={styles.deleteButton}>
+              <Icon name="trash" size={30} color="red" />
             </TouchableOpacity>
-            <Icon name="credit-card" size={100} color="#1c2633" />
-            <Text style={styles.addCardTitle}>Card Details</Text>
-            {selectedCard && (
-              <View>
-                <Text style={styles.label}>Bank Type: {selectedCard.bank_type}</Text>
-                <Text style={styles.label}>Card Number: {selectedCard.card_number}</Text>
-                <Text style={styles.label}>Card Type: {selectedCard.card_type}</Text>
-                <Text style={styles.label}>Expiration Date: {new Date(selectedCard.expiration_date).toDateString()}</Text>
-              </View>
-            )}
           </View>
         </View>
-      </Modal>
+      )}
+    </View>
+  </View>
+</Modal>
 
-      <ImageModal 
+<ImageModal 
         visible={isModalVisible} 
         onClose={handleCloseModal} 
-        imageUri={user?.profilePicture || '../Image/profile.jpg'} 
+        imageUri={user?.profilePicture || require("../Image/profile.jpg")} 
       />
+
 
 
 <Modal
@@ -590,11 +638,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: '90%',
+    width: '95%',
     backgroundColor: '#f7f7f7',
     borderRadius: 10,
     padding: 20,
     alignItems: 'center',
+    maxWidth: 500,
   },
   closeButton: {
     alignSelf: 'flex-end',
@@ -637,7 +686,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
   },
 
-  countdownText:{
+  countdownText: {
     color: 'black',
     fontSize: 16,
     fontFamily: 'Poppins-Regular',
@@ -675,11 +724,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#1c2633',  // Darker title color
+    color: '#1c2633', // Darker title color
   },
 
   modalItem: {
-    backgroundColor: '#1c2633',  // Dark card color
+    backgroundColor: '#1c2633', // Dark card color
     borderRadius: 15,
     marginVertical: 10,
     paddingVertical: 20,
@@ -695,10 +744,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  deleteButton: {
+    marginTop: 20,
+    alignItems: 'center',
+    color: 'red',
+  },
+
+  searchBar: {
+    height: 40,
+    borderColor: 'grey',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    marginBottom: 15,
+    width: '90%',
+  },
+
+  addCardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#1c2633',
+  },
+  label: {
+    fontSize: 16,
+    color: '#333',
+    marginTop: 10,
+    alignSelf: 'flex-start',
+  },
+  inputField: {
+    width: '100%',  // Ensure the input takes the full width
+    padding: 10,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginTop: 5,
+    marginBottom: 10,
+    maxWidth: 400,  // Optional: Restrict max width for larger screens
+  },
+  deleteButton: {
+    backgroundColor: 'transparent',
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editButton: {
+    backgroundColor: 'transparent',
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 20,  // Add spacing between the buttons
+  },
   iconRight: {
     marginLeft: 'auto',
   },
 });
-
-
 

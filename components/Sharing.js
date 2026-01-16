@@ -19,6 +19,7 @@ function SharingScreen() {
     const [remainingTime, setRemainingTime] = useState(300); // Initial time is 5 minutes (300 seconds)
     const [usersWithSharedCards, setUsersWithSharedCards] = useState([]);  // To store the users with shared cards
     const { user } = useContext(UserContext);
+    const [sharedCardsForRecipient, setSharedCardsForRecipient] = useState([]);
     console.log('User data from context:', user);
     const userId = user?.id;
 
@@ -86,18 +87,34 @@ function SharingScreen() {
         }
     };
 
-    const fetchCardsForSharing = async () => {
+    const fetchCardsForSharing = async (recipientId) => {
         try {
-            const response = await fetchCards();
-            setCards(response);
+            const response = await fetchCards();  // Fetch all available cards
+            const sharedCardsForRecipientData = await fetchUsersWithSharedCards(recipientId, 'recipient');  // Fetch cards already shared with the recipient
+            
+            // Extract the shared card IDs for the selected recipient
+            const sharedCardIds = sharedCardsForRecipientData.flatMap(user => 
+                user.sharedCards ? user.sharedCards.map(card => card.card_id) : []
+            );
+            
+            console.log('Shared Cards for Recipient:', sharedCardsForRecipientData);  // Log to inspect structure
+            console.log('Shared Card IDs:', sharedCardIds);  // Log the shared card IDs to verify
+            
+            // Filter out the cards that have already been shared with this specific recipient
+            const availableCards = response.filter(card => !sharedCardIds.includes(card.id));
+            
+            // Update state with filtered cards
+            setCards(availableCards);
+            setSharedCardsForRecipient(sharedCardIds);  // Store shared card IDs for this specific recipient
         } catch (error) {
             console.error('Error fetching cards:', error);
         }
     };
+    
 
     const toggleUserSelection = (userId) => {
         setSelectedUsers([userId]);
-        fetchCardsForSharing();
+        fetchCardsForSharing(userId);
         setCardModalOpen(true);
     };
 
@@ -261,20 +278,31 @@ function SharingScreen() {
                         <Icon name="credit-card" size={100} color="#1c2633" />
                         <Text style={styles.addCardTitle}>Select Cards to Share</Text>
                         <FlatList
-                            data={cards}
-                            keyExtractor={(item) => item.id.toString()}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity onPress={() => toggleCardSelection(item.id)} style={styles.cardItem}>
-                                    <Icon name="credit-card" size={24} color={'white'} style={{ paddingHorizontal: 10 }} />
-                                    <Text style={styles.cardText}>{item.card_number}</Text>
-                                    <Icon
-                                        name="check-circle"
-                                        size={24}
-                                        color={selectedCards.includes(item.id) ? '#1b8f3a' : 'grey'}
-                                    />
-                                </TouchableOpacity>
-                            )}
-                        />
+    data={cards}  // The filtered `cards` array that does not contain already shared cards
+    keyExtractor={(item) => item.id.toString()}
+    renderItem={({ item }) => (
+        <TouchableOpacity
+            onPress={() => toggleCardSelection(item.id)}
+            style={[
+                styles.cardItem,
+                { 
+                    opacity: selectedCards.includes(item.id) || 
+                             (sharedCardsForRecipient && sharedCardsForRecipient.includes(item.id)) 
+                             ? 0.5 : 1  // Reduce opacity if selected or already shared
+                }
+            ]}
+            disabled={sharedCardsForRecipient && sharedCardsForRecipient.includes(item.id)} // Disable the card if already shared
+        >
+            <Icon name="credit-card" size={24} color={'white'} style={{ paddingHorizontal: 10 }} />
+            <Text style={styles.cardText}>{item.card_number}</Text>
+            <Icon
+                name="check-circle"
+                size={24}
+                color={selectedCards.includes(item.id) ? '#1b8f3a' : 'grey'}  // Indicate selection
+            />
+        </TouchableOpacity>
+    )}
+/>
                         <TouchableOpacity style={styles.addCardButton} onPress={handleShare}>
                             <Text style={styles.addButtonText}>Share</Text>
                         </TouchableOpacity>

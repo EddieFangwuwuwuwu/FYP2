@@ -8,7 +8,7 @@ export const registerUser = async (userData) => {
         const response = await axios.post(`${API_URL}/register`, userData);
         return response.data;
     } catch (error) {
-        console.error('Error registering user:', error);
+        Alert.alert('Registration Error', 'Failed to register user. Please try again.');
         throw error;
     }
 };
@@ -19,7 +19,7 @@ export const loginUser = async (userData) => {
         const response = await axios.post(`${API_URL}/login`, userData);
         return response.data;
     } catch (error) {
-        console.error('Error logging in:', error);
+        Alert.alert('Login Error', 'Failed to log in. Please check your credentials and try again.');
         throw error;
     }
 };
@@ -34,6 +34,17 @@ export const addNewCard = async (cardData) => {
         throw error;
     }
 };
+
+export const deleteCard = async (cardId) => {
+    try {
+        const response = await axios.delete(`${API_URL}/cards/${cardId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting card:', error);
+        throw error;
+    }
+};
+
 
 // Create a new category
 export const createCategory = async (categoryData) => {
@@ -70,6 +81,8 @@ export const fetchCategories = async () => {
 
 // Add selected cards to a category
 export const addCardsToCategory = async (categoryId, cardIds) => {
+    console.log('categoryId being sent:', categoryId);  // Debugging log
+    console.log('cardIds being sent:', cardIds);        // Debugging log
     try {
         const response = await axios.post(`${API_URL}/addCardsToCategory`, {
             categoryId,
@@ -81,6 +94,7 @@ export const addCardsToCategory = async (categoryId, cardIds) => {
         throw error;
     }
 };
+
 
 // Update profile info (username, email, password)
 export const updateProfileInfo = async (data) => {

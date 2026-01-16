@@ -23,8 +23,11 @@ function CategoryScreen({ navigation,searchQuery = '' }) {
     };
 
     const handleCategoryPress = (category) => {
+        console.log('Navigating to CategoryaddCards with category:', category);  // Check if category.id is present
         navigation.navigate('CategoryaddCards', { category });
     };
+    
+    
 
     useEffect(() => {
         loadCategories(); // Load categories when the component is mounted

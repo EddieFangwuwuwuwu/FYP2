@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { saveReminderSettings } from '../components/api/api';  // Import the function from your API file
+import { useRoute } from '@react-navigation/native';  // Import useRoute to access route parameters
+import { saveReminderSettings } from '../components/api/api';
 
-function EditExpireDate({ userId, navigation }) {
+function EditExpireDate() {
+    const route = useRoute();  // Get the route object
+    const { userId } = route.params;  // Retrieve userId from route params
     const [reminderPeriod, setReminderPeriod] = useState('30');  // Default to 30 days
 
     const handleSaveReminderSettings = async () => {
         try {
-            await saveReminderSettings(userId, reminderPeriod);  // Use the API function with only reminderPeriod
+            console.log('Saving for userId:', userId);  // Log userId to ensure it's passed correctly
+            await saveReminderSettings(userId, reminderPeriod);  // Use the API function with reminderPeriod
             Alert.alert('Success', 'Settings updated successfully!');
         } catch (error) {
             Alert.alert('Failed to update settings.');
@@ -19,12 +23,10 @@ function EditExpireDate({ userId, navigation }) {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Edit Card Expiration Date</Text>
+            <Text style={styles.title}>Edit Card Expiration Date Reminder</Text>
 
-            
             <Icon name="credit-card" size={100} color="#1c2633" style={styles.icon} />
 
-           
             <View style={styles.row}>
                 <Text style={styles.label}>Reminder Time</Text>
                 <View style={styles.pickerContainer}>
@@ -40,7 +42,6 @@ function EditExpireDate({ userId, navigation }) {
                 </View>
             </View>
 
-            
             <View style={styles.bottom}>
                 <TouchableOpacity style={styles.submitButton} onPress={handleSaveReminderSettings}>
                     <Text style={styles.submitText}>Submit Changes</Text>
@@ -48,7 +49,8 @@ function EditExpireDate({ userId, navigation }) {
             </View>
         </View>
     );
-};
+}
+
 
 const styles = StyleSheet.create({
     title: {

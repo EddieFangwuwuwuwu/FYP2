@@ -34,6 +34,9 @@ router.get('/cards/category/:categoryId', authenticateUser, userController.getCa
 router.get('/fetchPendingSharedCards', authenticateUser, userController.fetchPendingSharedCards);
 router.get('/getVerifiedSharedCards/:userId', authenticateUser, userController.getVerifiedSharedCards);
 router.get('/getUsersWithSharedCards/:userId', authenticateUser, userController.getUsersWithSharedCards);
+router.delete('/cards/:cardId', authenticateUser, userController.deleteCard); 
+router.post('/saveReminderSettings', userController.saveReminderSettings);
+router.get('/getReminderSettings/:userId', authenticateUser, userController.getReminderSettings);
 
 
 module.exports = router;

@@ -13,18 +13,36 @@ function CategoryaddCards({ route, navigation }) {
     const [selectedCard, setSelectedCard] = useState(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
 
+    useEffect(() => {
+        if (!category?.id) {
+            console.error('Category ID is missing');  // Debugging log if categoryId is missing
+        } else {
+            console.log('categoryId received:', category.id);  // Log the received categoryId
+        }
+    }, [category]);
+
     // Fetch cards associated with the selected category
     const loadCategoryCards = async () => {
         try {
-            const cards = await fetchCardsForCategory(category.id); // Fetch cards related to the category
+            const cards = await fetchCardsForCategory(category.id); 
+            console.log("Updated category cards after adding:", cards);  // Debugging log to verify fetched cards
             setCategoryCards(cards);
-            const allCards = await fetchCards(); // Fetch all cards for the user
-            const notAssociatedCards = allCards.filter(card => !cards.some(c => c.id === card.id));
+            const allCards = await fetchCards(); 
+            const categoryType = category.cateType.toLowerCase(); 
+            const notAssociatedCards = allCards.filter(card => !cards.some(c => c.id === card.id) && 
+                card.card_type.toLowerCase() === categoryType);
             setAvailableCards(notAssociatedCards);
         } catch (error) {
             console.error('Failed to load category cards:', error);
         }
     };
+    
+    useEffect(() => {
+        if (category && category.id) {
+            loadCategoryCards();  // Load cards only when categoryId is available
+        }
+    }, [category]);  // This useEffect will only run once category is available
+    
 
     useEffect(() => {
         loadCategoryCards(); // Load category cards when the screen is loaded
@@ -41,18 +59,23 @@ function CategoryaddCards({ route, navigation }) {
     const handleAddCardsToCategory = async () => {
         if (selectedCards.length === 0) {
             console.error('No cards selected to add.');
-            return;  // Exit the function early if no cards are selected
+            return;
         }
         try {
-            await addCardsToCategory(category.id, selectedCards);  // Pass category.id and selectedCards correctly
-            setModalOpen(false);
-            setSelectedCards([]);
-            await loadCategoryCards(); // Refresh the category cards to reflect the changes
+            const response = await addCardsToCategory(category.id, selectedCards);  // Ensure this API works properly
+            console.log('Added cards to category:', response);  // Debugging log
+            setSelectedCards([]);  // Clear selected cards after adding
+            setModalOpen(false);  // Close the modal
+            
+            // Re-fetch the updated category cards
+            const updatedCards = await fetchCardsForCategory(category.id); 
+            setCategoryCards(updatedCards);  // Update the state with the new set of cards
         } catch (error) {
             console.error('Failed to add cards to category:', error);
         }
     };
-
+    
+    
     const filteredCards = availableCards.filter(card =>
         card.card_number && card.card_number.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -80,7 +103,7 @@ function CategoryaddCards({ route, navigation }) {
                                     <Text style={styles.name}>{item.bank_type}</Text>
                                     <Text style={styles.subname}>{item.card_number}</Text>
                                 </View>
-                                <Icon name="chevron-right" size={45} color="white" style={styles.iconRight} />
+                                
                             </View>
                         </TouchableOpacity>
                     )}

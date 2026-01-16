@@ -16,6 +16,12 @@ function SignUpPage() {
       return;
     }
 
+    if (!email.includes('@') || !email.endsWith('.com')) {
+      Alert.alert('Error', 'Invalid email format. Email must contain "@" and end with ".com".');
+      return;
+    }
+
+
     const userData = { email, username, password };
     
     try {
@@ -25,7 +31,7 @@ function SignUpPage() {
         navigation.navigate('Login'); // Navigate to the Login page
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to register account');
+      Alert.alert('Error', 'Email has been used');
     }
   };
 
@@ -69,7 +75,7 @@ function SignUpPage() {
         </TouchableOpacity>
       </View>
 
-      {/* Adjusted "Already have an account?" section */}
+      
       <View style={styles.signInContainer}>
         <Text style={styles.signInText}>Already have an account?</Text>
         <TouchableOpacity style={styles.signInButton} onPress={() => navigation.navigate('Login')}>

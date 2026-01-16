@@ -19,21 +19,43 @@ const storage = multer.diskStorage({
 // Initialize multer with the storage configuration
 const upload = multer({ storage: storage });
 
-// Register a new user
+
+
+// Register a user
 exports.registerUser = (req, res) => {
     try {
         const { email, username, password } = req.body;
+
+        // Basic email validation
+        if (!email.includes('@') || !email.endsWith('.com')) {
+            return res.status(400).send({ message: 'Invalid email format. Email must contain "@" and end with ".com"' });
+        }
+
+        // Hash the password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
-        const query = 'INSERT INTO users (email, username, password) VALUES (?, ?, ?)';
-        db.query(query, [email, username, hashedPassword], (err, result) => {
+        // Check if the email already exists in the database
+        const checkQuery = 'SELECT * FROM users WHERE email = ?';
+        db.query(checkQuery, [email], (err, results) => {
             if (err) {
-                return res.status(500).send({ message: 'Error registering user', error: err });
+                return res.status(500).send({ message: 'Server error during registration. Please try again later.' });
             }
-            res.status(201).send({ message: 'User registered successfully!' });
+
+            if (results.length > 0) {
+                return res.status(400).send({ message: 'Account with this email already exists.' });
+            }
+
+            // If the email does not exist, insert the new user
+            const query = 'INSERT INTO users (email, username, password) VALUES (?, ?, ?)';
+            db.query(query, [email, username, hashedPassword], (err, result) => {
+                if (err) {
+                    return res.status(500).send({ message: 'Error registering user. Please try again.' });
+                }
+                res.status(201).send({ message: 'User registered successfully!' });
+            });
         });
     } catch (err) {
-        res.status(500).send({ message: 'An error occurred', error: err.message });
+        res.status(500).send({ message: 'An unexpected error occurred. Please try again.', error: err.message });
     }
 };
 
@@ -42,30 +64,36 @@ exports.loginUser = (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Validate email format
+        if (!email.includes('@') || !email.endsWith('.com')) {
+            return res.status(400).send({ message: 'Invalid email format. Email must contain "@" and end with ".com".' });
+        }
+
         const query = 'SELECT * FROM users WHERE email = ?';
         db.query(query, [email], (err, results) => {
             if (err) {
-                return res.status(500).send({ message: 'Error retrieving user', error: err });
+                return res.status(500).send({ message: 'Server error. Please try again later.' });
             }
 
             if (results.length === 0) {
-                return res.status(404).send({ message: 'User not found' });
+                return res.status(404).send({ message: 'User not found.' });
             }
 
             const user = results[0];
             const isPasswordValid = bcrypt.compareSync(password, user.password);
 
             if (!isPasswordValid) {
-                return res.status(401).send({ message: 'Invalid password' });
+                return res.status(401).send({ message: 'Invalid password.' });
             }
 
             req.session.user = { id: user.id, username: user.username };
             res.status(200).send({ message: 'Login successful', user: { id: user.id, username: user.username } });
         });
     } catch (err) {
-        res.status(500).send({ message: 'An error occurred', error: err.message });
+        res.status(500).send({ message: 'An unexpected error occurred. Please try again.', error: err.message });
     }
 };
+
 
 // Add a new banking card
 exports.addNewCard = (req, res) => {
@@ -89,6 +117,36 @@ exports.addNewCard = (req, res) => {
     }
 };
 
+
+// Delete a banking card
+exports.deleteCard = (req, res) => {
+    try {
+        const userId = req.session.user.id;  // Get user ID from session
+        const cardId = req.params.cardId;    // Get card ID from request parameters
+
+        // Ensure cardId is provided
+        if (!cardId) {
+            return res.status(400).send({ message: 'Card ID is required.' });
+        }
+
+        // Call the model to delete the card
+        User.deleteCard(cardId, userId, (err, result) => {  // Changed from deleteCardById to deleteCard
+            if (err) {
+                return res.status(500).send({ message: 'Error deleting card', error: err });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).send({ message: 'Card not found or does not belong to the user.' });
+            }
+
+            res.status(200).send({ message: 'Card deleted successfully.' });
+        });
+    } catch (err) {
+        res.status(500).send({ message: 'An error occurred', error: err.message });
+    }
+};
+
+
 // Create a new category
 exports.createCate = (req, res) => {
     try {
@@ -100,12 +158,21 @@ exports.createCate = (req, res) => {
                 return res.status(500).send({ message: 'Error creating category', error: err });
             }
 
-            res.status(201).send({ message: 'Category created successfully!' });
+            // Send back the new category's ID
+            const newCategoryId = result.insertId; 
+            res.status(201).send({
+                message: 'Category created successfully!',
+                id: newCategoryId,  // Include the new category ID
+                cateName,
+                cateType,
+                userId,
+            });
         });
     } catch (err) {
         res.status(500).send({ message: 'An error occurred', error: err.message });
     }
 };
+
 
 // Fetch all cards
 exports.getAllCards = (req, res) => {
@@ -606,22 +673,62 @@ exports.getUsersWithSharedCards = (req, res) => {
 };
 
 exports.saveReminderSettings = (req, res) => {
-    const { userId, reminderPeriod } = req.body;  
+    const { userId, reminderPeriod } = req.body;
+    console.log('Received request to save reminder settings:', userId, reminderPeriod);  // Add this
+
+    // Step 1: Retrieve the current reminder_period
+    const getCurrentReminderQuery = 'SELECT reminder_period FROM users WHERE id = ?';
     
-    const query = 'UPDATE users SET reminder_period = ? WHERE id = ?';
-    
-    db.query(query, [reminderPeriod, userId], (err, result) => {
+    db.query(getCurrentReminderQuery, [userId], (err, result) => {
         if (err) {
-            return res.status(500).send({ message: 'Error updating reminder settings', error: err });
+            console.error('Error retrieving current reminder settings:', err);  // Add this
+            return res.status(500).send({ message: 'Error retrieving current reminder settings', error: err });
         }
-        return res.status(200).send({ message: 'Reminder settings updated successfully!' });
+        
+        // Check if the user exists
+        if (!result || result.length === 0) {
+            console.log('User not found:', userId);  // Add this
+            return res.status(404).send({ message: 'User not found.' });
+        }
+
+        // Step 2: Compare current value with the new value
+        const currentReminderPeriod = result[0].reminder_period;
+        
+        if (currentReminderPeriod === reminderPeriod) {
+            console.log('Reminder period is already set to this value:', reminderPeriod);  // Add this
+            return res.status(400).send({ message: 'Reminder period is already set to this value.' });
+        }
+        
+        // Step 3: Update the reminder_period if it's different
+        const updateReminderQuery = 'UPDATE users SET reminder_period = ? WHERE id = ?';
+        
+        db.query(updateReminderQuery, [reminderPeriod, userId], (err, result) => {
+            if (err) {
+                console.error('Error updating reminder settings:', err);  // Add this
+                return res.status(500).send({ message: 'Error updating reminder settings', error: err });
+            }
+
+            // Check if the update was successful
+            if (result.affectedRows === 0) {
+                console.log('User not found or no changes made:', userId);  // Add this
+                return res.status(404).send({ message: 'User not found or no changes made.' });
+            }
+
+            console.log('Reminder settings updated successfully for user:', userId);  // Add this
+            return res.status(200).send({ message: 'Reminder settings updated successfully!' });
+        });
     });
 };
 
 
 exports.getReminderSettings = (req, res) => {
-    const { userId } = req.params;  // Use userId from request params
+    const { userId } = req.params;  // Make sure userId is in params
     
+    // Validate userId
+    if (!userId) {
+        return res.status(400).send({ message: 'User ID is required' });
+    }
+
     const query = 'SELECT reminder_period FROM users WHERE id = ?';
     
     db.query(query, [userId], (err, result) => {
@@ -631,6 +738,6 @@ exports.getReminderSettings = (req, res) => {
         if (result.length === 0) {
             return res.status(404).send({ message: 'User not found' });
         }
-        return res.status(200).send(result[0]);  // Return the reminder_period only
+        return res.status(200).send({ reminderPeriod: result[0].reminder_period });
     });
 };

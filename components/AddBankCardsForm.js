@@ -4,6 +4,14 @@ import { StyleSheet, View, TextInput, Button, Text, TouchableOpacity } from 'rea
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addNewCard  } from './api/api';  // Import the function from api.js
+import * as Yup from 'yup';
+
+const validationSchema = Yup.object().shape({
+  cardNumber: Yup.string()
+    .matches(/^[0-9]+$/, 'Card number must be numeric')
+    .required('Card number is required'),
+});
+
 
 function AddCardsForm({ addCard,userId }) {
   const [selectedBankType, setSelectedBankType] = useState('Hong Leong Bank Berhad');
@@ -36,8 +44,9 @@ function AddCardsForm({ addCard,userId }) {
       <Formik
         initialValues={{ cardNumber: '' }}
         onSubmit={handleAddNewCard}
+        validationSchema={validationSchema}
       >
-        {(props) => (
+        {( props) => (
           <View style={styles.form}>
             <Text style={styles.label}>Bank Type:</Text>
             <View style={styles.pickerContainer}>
@@ -63,10 +72,13 @@ function AddCardsForm({ addCard,userId }) {
               keyboardType="numeric"
               placeholder="Enter Card Number"
               onChangeText={props.handleChange('cardNumber')}
+              onBlur={props.handleBlur('cardNumber')}  
               value={props.values.cardNumber}
               style={styles.input}
             />
-
+            {props.touched.cardNumber && props.errors.cardNumber && (  
+            <Text style={styles.errorText}>{props.errors.cardNumber}</Text>
+          )}
             <Text style={styles.label}>Banking Card Type:</Text>
             <View style={styles.pickerContainer}>
               <Picker
@@ -162,6 +174,12 @@ const styles = StyleSheet.create({
   submitButtonContainer: {
     marginTop: 20,
     width: '100%',
+  },
+
+  errorText: {  // Style for error text
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 10,
   },
 });
 

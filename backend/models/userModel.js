@@ -12,6 +12,11 @@ const User = {
         const query = 'INSERT INTO banking_cards SET ?';
         db.query(query, cardData, callback);
     },
+    // Method to delete a banking card by card ID and user ID
+     deleteCard: (cardId, userId, callback) => {
+    const query = 'DELETE FROM banking_cards WHERE id = ? AND user_id = ?';
+    db.query(query, [cardId, userId], callback);
+    },
 
     // Method to create a new category
     createCategory: (categoryData, callback) => {

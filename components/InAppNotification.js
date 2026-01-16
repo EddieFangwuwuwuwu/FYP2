@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Animated, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';  // Import FontAwesome icon library
 
+// Helper function to format date as DD-MM-YYYY and time in 24-hour format
+const formatDate = (dateString) => {
+    const date = new Date(dateString);
+
+    // Extract day, month, year, hours, and minutes
+    const day = ('0' + date.getDate()).slice(-2);
+    const month = ('0' + (date.getMonth() + 1)).slice(-2); // Months are 0-indexed, so add 1
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`;
+};
+
 const InAppNotification = ({ cardType, cardNumber, expiredDate, visible, onClick, onClose }) => {
     const [slideAnim] = useState(new Animated.Value(-100)); // Initial position off-screen
 
@@ -32,12 +44,9 @@ const InAppNotification = ({ cardType, cardNumber, expiredDate, visible, onClick
     return (
         <Animated.View style={[styles.notificationContainer, { transform: [{ translateY: slideAnim }] }]}>
             <TouchableOpacity onPress={onClick} style={styles.notificationContent}>
-                
                 <Icon name="credit-card" size={24} color="#1c2633" style={styles.icon} />
-                
-                
                 <Text style={styles.notificationText}>
-                    Your {cardType} : {cardNumber} will expire at {expiredDate}. Kindly check your banking card.
+                    Your {cardType} : {cardNumber} will expire at {formatDate(expiredDate)}. Kindly check your banking card.
                 </Text>
             </TouchableOpacity>
         </Animated.View>

@@ -3,13 +3,13 @@ import { View, StyleSheet, Text } from 'react-native';
 import { Avatar, Title } from 'react-native-paper';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { UserContext } from './UserContext';
+import { UserContext } from './UserContext';  // Import the UserContext to access user data
 import ImageModal from './profileImage/ImageModal';
 import { useNavigation } from '@react-navigation/native';
 
 function Setting() {
     const navigation = useNavigation();
-    const { user } = useContext(UserContext);
+    const { user } = useContext(UserContext);  // Access the user from UserContext
     const [isModalVisible, setModalVisible] = useState(false);
 
     const handleAvatarPress = () => {
@@ -31,6 +31,7 @@ function Setting() {
             </TouchableOpacity>
             <View style={{ flexDirection: 'column', marginTop: 20 }}></View>
             <Title style={styles.username}>{user?.username || "Guest"}</Title>
+            
             <TouchableOpacity style={styles.option} onPress={() => { navigation.navigate('Account Information'); }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={styles.optionText}>Account Information</Text>
@@ -38,7 +39,13 @@ function Setting() {
                 </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.option} onPress={() => { navigation.navigate('Edit Expiration Date'); }}>
+            <TouchableOpacity 
+                style={styles.option} 
+                onPress={() => { 
+                    // Pass userId to the EditExpireDate screen
+                    navigation.navigate('Edit Card Expiration Reminder', { userId: user?.id }); 
+                }}
+            >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={styles.optionText}>Edit Card Expiration Date</Text>
                     <Icon name="chevron-right" size={45} color="#1c2633" style={styles.iconRight} />
